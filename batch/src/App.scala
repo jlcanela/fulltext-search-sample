@@ -13,8 +13,8 @@ object App extends ZIOApp {
     override def layer: ZLayer[Has[ZIOAppArgs],Any,Environment] = ZLayer.wire[Environment](ZEnv.live)
 
     override def run: ZIO[Environment with ZEnv with Has[ZIOAppArgs],Any,Any] = for {
-     count <- ZIO.attempt(Exec.run)
-     _ <- ZIO.attempt(log.info(s"count: $count"))
+     _ <- ZIO.attempt(Exec())
+     _ <- ZIO.attempt(log.info(s"finished"))
     } yield ()
 
 }
