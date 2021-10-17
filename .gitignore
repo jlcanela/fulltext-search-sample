@@ -1,2 +1,8 @@
 *.class
 *.log
+.bloop
+.coursier
+.history
+.metals
+node_modules
+out

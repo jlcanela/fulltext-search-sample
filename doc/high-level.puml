@@ -1,0 +1,24 @@
+@startuml high-level
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+System_Boundary(web, "Web"){
+  System(webserver, "Webserver")
+}
+
+System_Boundary(monitoring, "Monitoring") {
+  System(logs, "Logs")
+  Rel_R(webserver, logs, "save", "https")
+  
+  System(batch, "Batch")
+  System(index, "ElasticSearch")
+  System(kibana, "Kibana")
+
+  Rel_L(batch, logs, "read", "https")
+  Rel_R(batch, index, "write", "https")
+  Rel_L(kibana, index, "read", "https")
+
+}
+
+
+@enduml
