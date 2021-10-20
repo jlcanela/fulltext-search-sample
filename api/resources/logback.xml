@@ -9,11 +9,11 @@
         </layout>
     </appender>
 
-    <logger name="com.sksamuel.elastic4s" level="debug" additivity="false">
+    <logger name="com.sksamuel.elastic4s" level="info" additivity="false">
         <appender-ref ref="CONSOLE"/>
     </logger>
 
-    <logger name="org.elasticsearch" level="debug" additivity="false">
+    <logger name="org.elasticsearch" level="info" additivity="false">
         <appender-ref ref="CONSOLE"/>
     </logger>
 
@@ -21,7 +21,7 @@
         <appender-ref ref="CONSOLE"/>
     </logger>    
 
-    <root level="debug">
+    <root level="info">
         <appender-ref ref="CONSOLE"/>
     </root>
 
