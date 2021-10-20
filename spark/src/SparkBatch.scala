@@ -16,8 +16,8 @@ object AccessLog {
     } yield AccessLog(ip, ident, user, datetime, request, status, size, referer, userAgent, unk) 
 }
 
-object Exec {
-    val log = Logger.getLogger(Exec.getClass().getName())
+object SparkBatch {
+    val log = Logger.getLogger(SparkBatch.getClass().getName())
 
     val outputPath = "out-json"
 

@@ -1,10 +1,8 @@
 import zio._
 
-object App extends ZIOApp {
+object SparkCli extends ZIOApp {
 
     import org.apache.log4j.Logger
-
-    val log = Logger.getLogger(App.getClass().getName())
 
     type Environment = ZEnv
 
@@ -13,13 +11,14 @@ object App extends ZIOApp {
     override def layer: ZLayer[Has[ZIOAppArgs],Any,Environment] = ZLayer.wire[Environment](ZEnv.live)
 
     def run(command: String) = command match {
-        case "batch" => Exec.clean _
-        case "index" => Exec.index _
+        case "batch" => Exec(Exec.clean _)
+        case "index" => Exec(Exec.index _)
+        case _ => println(s"command '$command' not recognized (batch|index)")
     }
     override def run: ZIO[Environment with ZEnv with Has[ZIOAppArgs],Any,Any] = for {
      args <- getArgs if args.length > 0
-     _ <- ZIO.attempt(Exec(run(args(0))))
-     _ <- ZIO.attempt(log.info(s"finished"))
+     _ <- ZIO.attempt(run(args(0)))
+     _ <- Console.printLine(s"finished")
     } yield ()
 
 }

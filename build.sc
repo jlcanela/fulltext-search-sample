@@ -6,13 +6,24 @@ import java.io.File
 
 import mill.modules.Assembly
 
-object batch extends ScalaModule { outer =>
+object Deps {
+  val SPARK_VERSION = "3.1.2"
+  val ELASTICSEARCH_VERSION = "7.15.1"
+  val ZIO_VERSION = "2.0.0-M4"
+}
+
+object spark extends ScalaModule { outer =>
+
+  import Deps._ 
+
   def scalaVersion = "2.12.15"
   def scalacOptions =
     Seq("-encoding", "utf-8", "-explaintypes", "-feature", "-deprecation")
 
   def ivySparkDeps = Agg(
-    ivy"org.apache.spark::spark-sql:3.1.2"
+    ivy"org.apache.spark::spark-sql:${SPARK_VERSION}"
+      .exclude("org.slf4j" -> "slf4j-log4j12"),
+    ivy"org.apache.spark::spark-streaming:${SPARK_VERSION}"
       .exclude("org.slf4j" -> "slf4j-log4j12"),
     ivy"org.slf4j:slf4j-api:1.7.16",
     ivy"org.slf4j:slf4j-log4j12:1.7.16"
@@ -20,8 +31,8 @@ object batch extends ScalaModule { outer =>
 
   def ivyDeps = Agg(
     ivy"com.lihaoyi::upickle:0.9.7",
-    ivy"org.elasticsearch::elasticsearch-spark-30:7.15.1",
-    ivy"dev.zio::zio:2.0.0-M4"
+    ivy"org.elasticsearch::elasticsearch-spark-30:${ELASTICSEARCH_VERSION}",
+    ivy"dev.zio::zio:${ZIO_VERSION}"
   )
 
   def compileIvyDeps = ivySparkDeps
@@ -43,13 +54,14 @@ object batch extends ScalaModule { outer =>
   }
 }
 
-object data extends ScalaModule {
+object runner extends ScalaModule {
+
+  import Deps._ 
+
   def scalaVersion = "2.13.6"
 
   def ivyDeps = Agg(
-    ivy"dev.zio::zio:2.0.0-M4",
-    ivy"dev.zio::zio-nio:1.0.0-RC11",
-    //ivy"net.sourceforge.plantuml:plantuml:8059",
+    ivy"dev.zio::zio:${ZIO_VERSION}",
     ivy"com.lihaoyi::os-lib:0.7.8"
   )
 
@@ -65,16 +77,16 @@ object data extends ScalaModule {
   }
 }
 
-
 object api extends ScalaModule {
+
+  import Deps._ 
+
   def scalaVersion = "2.13.6"
 
   def ivyDeps = Agg(
-    ivy"dev.zio::zio:2.0.0-M4",
-    ivy"dev.zio::zio-nio:1.0.0-RC11",
-    ivy"com.sksamuel.elastic4s::elastic4s-client-esjava:7.15.0",
+    ivy"dev.zio::zio::${ZIO_VERSION}",
+    ivy"com.sksamuel.elastic4s::elastic4s-client-esjava:${ELASTICSEARCH_VERSION}",
     ivy"com.google.guava:guava:31.0.1-jre",
-  //  ivy"org.slf4j:slf4j-simple:1.7.32",
     ivy"ch.qos.logback:logback-classic:1.2.6"
   )
 
