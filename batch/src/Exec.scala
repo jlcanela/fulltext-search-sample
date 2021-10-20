@@ -3,6 +3,9 @@ import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.SparkSession
 import org.apache.log4j.Logger;
 
+//import org.elasticsearch.spark._ 
+import org.elasticsearch.spark.sql._
+
 case class AccessLog(ip: String, ident: String, user: String, datetime: String, request: String, status: String, size: String, referer: String, userAgent: String, unk: String)
 object AccessLog {
     val R = """^(?<ip>[0-9.]+) (?<identd>[^ ]) (?<user>[^ ]) \[(?<datetime>[^\]]+)\] \"(?<request>[^\"]*)\" (?<status>[^ ]*) (?<size>[^ ]*) \"(?<referer>[^\"]*)\" \"(?<useragent>[^\"]*)\" \"(?<unk>[^\"]*)\"""".r
@@ -15,14 +18,22 @@ object AccessLog {
 
 object Exec {
     val log = Logger.getLogger(Exec.getClass().getName())
-    
-    def apply() = {
-        val spark = SparkSession.builder.appName("Simple Application").getOrCreate()
-        run(spark)
+
+    val outputPath = "out-json"
+
+    def apply(f: SparkSession => Unit) = {
+        val builder = SparkSession.builder.appName("Spark Batch")
+        builder
+        .config("es.index.auto.create", "true")
+        .config("es.nodes.wan.only", "true")
+        .config("es.net.http.auth.user", "elastic")
+        .config("es.net.http.auth.pass", "somethingsecret")
+        val spark = builder.getOrCreate()
+        f(spark)
         spark.close
     }
 
-    def run(spark: SparkSession) = {
+    def clean(spark: SparkSession) = {
        val REQ_EX = "([^ ]+)[ ]+([^ ]+)[ ]+([^ ]+)".r
        
        import spark.implicits._
@@ -42,6 +53,11 @@ object Exec {
 
        val dsExtended = cleanData(readSource)
        log.info(s"${dsExtended.schema.toDDL}")
-       dsExtended.write.mode("Overwrite").json("out-json")
+       dsExtended.write.option("compression", "gzip").mode("Overwrite").json(outputPath)
+    }
+
+    def index(spark: SparkSession) = {
+        val df = spark.read.json(outputPath)
+        df.saveToEs("web/logs")
     }
 }

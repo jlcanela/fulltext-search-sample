@@ -4,5 +4,8 @@
 .coursier
 .history
 .metals
+.vscode
+access.log.gz
 node_modules
 out
+out-json

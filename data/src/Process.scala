@@ -28,7 +28,8 @@ def fetchFile(path: String) = for {
     override def download(path: String): ZIO[Has[Console], Throwable, Unit] = for {
       file <- fetchFile(path)
       _ <- console.printLine(List("spark-submit", "--class", "App", s"${os.pwd}/out/batch/assembly/dest/out.jar").mkString(" "))
-      _ <- ZIO.attempt(os.proc("spark-submit", "--class", "App", s"${os.pwd}/out/batch/assembly/dest/out.jar").spawn(cwd=os.pwd).join())
+      //_ <- ZIO.attempt(os.proc("spark-submit", "--class", "App", s"${os.pwd}/out/batch/assembly/dest/out.jar", "batch").spawn(cwd=os.pwd).join())
+      _ <- ZIO.attempt(os.proc("spark-submit", "--class", "App", s"${os.pwd}/out/batch/assembly/dest/out.jar", "index").spawn(cwd=os.pwd).join())
     } yield ()
 }
 

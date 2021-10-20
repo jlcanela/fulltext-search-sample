@@ -20,6 +20,7 @@ object batch extends ScalaModule { outer =>
 
   def ivyDeps = Agg(
     ivy"com.lihaoyi::upickle:0.9.7",
+    ivy"org.elasticsearch::elasticsearch-spark-30:7.15.1",
     ivy"dev.zio::zio:2.0.0-M4"
   )
 
@@ -48,12 +49,12 @@ object data extends ScalaModule {
   def ivyDeps = Agg(
     ivy"dev.zio::zio:2.0.0-M4",
     ivy"dev.zio::zio-nio:1.0.0-RC11",
-    ivy"net.sourceforge.plantuml:plantuml:8059",
+    //ivy"net.sourceforge.plantuml:plantuml:8059",
     ivy"com.lihaoyi::os-lib:0.7.8"
   )
 
   def genPuml() = T.command {
-    println("Generating documentation") 
+    println("Generating documentation ") 
 
     for {
         path <- os.list(os.pwd/"doc").filter(_.ext == "puml").map(_.relativeTo(os.pwd))
@@ -62,4 +63,19 @@ object data extends ScalaModule {
     } yield path.toString
     
   }
+}
+
+
+object api extends ScalaModule {
+  def scalaVersion = "2.13.6"
+
+  def ivyDeps = Agg(
+    ivy"dev.zio::zio:2.0.0-M4",
+    ivy"dev.zio::zio-nio:1.0.0-RC11",
+    ivy"com.sksamuel.elastic4s::elastic4s-client-esjava:7.15.0",
+    ivy"com.google.guava:guava:31.0.1-jre",
+  //  ivy"org.slf4j:slf4j-simple:1.7.32",
+    ivy"ch.qos.logback:logback-classic:1.2.6"
+  )
+
 }
