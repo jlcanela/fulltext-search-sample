@@ -9,7 +9,8 @@ import mill.modules.Assembly
 object Deps {
   val SPARK_VERSION = "3.1.2"
   val ELASTICSEARCH_VERSION = "7.15.0"
-  val ZIO_VERSION = "2.0.0-M4"
+  val ZIO_V1 = "1.0.9"
+  val ZIO_V2 = "2.0.0-M4"
 }
 
 object spark extends ScalaModule { outer =>
@@ -32,7 +33,7 @@ object spark extends ScalaModule { outer =>
   def ivyDeps = Agg(
     ivy"com.lihaoyi::upickle:0.9.7",
     ivy"org.elasticsearch::elasticsearch-spark-30:${ELASTICSEARCH_VERSION}",
-    ivy"dev.zio::zio:${ZIO_VERSION}"
+    ivy"dev.zio::zio:${ZIO_V2}"
   )
 
   def compileIvyDeps = ivySparkDeps
@@ -61,13 +62,12 @@ object runner extends ScalaModule {
   def scalaVersion = "2.13.6"
 
   def ivyDeps = Agg(
-    ivy"dev.zio::zio:${ZIO_VERSION}",
+    ivy"dev.zio::zio:${ZIO_V2}",
     ivy"com.lihaoyi::os-lib:0.7.8"
   )
 
   def genPuml() = T.command {
-    println("Generating documentation ") 
-
+    println("Generating documentation")
     for {
         path <- os.list(os.pwd/"doc").filter(_.ext == "puml").map(_.relativeTo(os.pwd))
         file = path.toString
@@ -83,11 +83,21 @@ object api extends ScalaModule {
 
   def scalaVersion = "2.13.6"
 
+  def moduleDeps = Seq(model)
+
   def ivyDeps = Agg(
-    ivy"dev.zio::zio::${ZIO_VERSION}",
+    ivy"dev.zio::zio::${ZIO_V1}",
     ivy"com.sksamuel.elastic4s::elastic4s-client-esjava:${ELASTICSEARCH_VERSION}",
     ivy"com.google.guava:guava:31.0.1-jre",
-    ivy"ch.qos.logback:logback-classic:1.2.6"
+    ivy"ch.qos.logback:logback-classic:1.2.6",
+    ivy"com.github.ghostdogpr::caliban:1.2.1",
+    ivy"com.github.ghostdogpr::caliban-zio-http:1.2.1",
   )
 
+}
+
+object model extends ScalaModule {
+
+  def scalaVersion = "2.13.6"
+  
 }

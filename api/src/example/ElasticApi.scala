@@ -1,3 +1,5 @@
+package example
+
 import zio._
 
 import com.sksamuel.elastic4s._
@@ -7,19 +9,24 @@ import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.requests.searches.SearchHit
 
 import org.elasticsearch.client.RestClient
-import org.apache.http.HttpHost
-import org.apache.http.message.BasicHeader
-import org.apache.http.Header
 import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback
+import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback
+import org.apache.http.client.config.RequestConfig
+import org.apache.http.HttpHost
+import org.apache.http.Header
+
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.auth.UsernamePasswordCredentials
 import org.apache.http.auth.AuthScope
-import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback
-import org.apache.http.client.config.RequestConfig
-import com.sksamuel.elastic4s.requests.searches.SearchRequest
 
-object Api {
+import com.sksamuel.elastic4s.requests.searches.SearchRequest
+import com.sksamuel.elastic4s.zio.instances._
+
+import model.Log
+import example.ExampleApi
+
+object ElasticApi {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -54,7 +61,7 @@ object Api {
         JavaClient.fromRestClient(restClientBuilder.build())
     }
 
-    def connect: ZIO.Release[Any, Throwable, ElasticClient] = ZIO.acquireReleaseWith { ZIO.attempt {
+    def connect /*: ZIO.Release[Any, Throwable, ElasticClient]*/ = ZIO.bracket { ZIO.succeed {
         val elasticHost = "localhost"
         val elasticPort = 9200
         val user = "elastic"
@@ -63,16 +70,20 @@ object Api {
      }
     }(client => ZIO.succeed(client.close))
 
-    def searchApi: ZIO[Any, Serializable, Array[SearchHit]] = for {
+    def searchApi(from: Int, size: Int): ZIO[Any, Serializable, List[Log]] = for {
         resp <- connect { client: ElasticClient => 
-            import com.sksamuel.elastic4s.zio.instances._
+           
             client.execute {
-                search("web").matchQuery("uri", "php").sortByFieldDesc("datetime")
-            }
+                /*val sz = 100
+                val pg = 10
+                val frm = sz * pg*/
+                search("web").query(must(matchAllQuery()).filter(termQuery("uri", "php"))).from(from).size(size).sortByFieldAsc("datetime")
+                // sourceInclude("gps", "populat*") sourceExclude("denonymn", "capit*")
+           }
         }
         rr <- resp match {
             case failure: RequestFailure => ZIO.fail(failure) 
-            case results: RequestSuccess[SearchResponse] => ZIO.succeed(results.result.hits.hits)            
+            case results: RequestSuccess[SearchResponse] => ZIO.succeed(results.result.hits.hits.toList.map(_.sourceAsMap).map(Log.fromMap _))            
         }
     } yield rr
 }
