@@ -19,3 +19,9 @@ A batch processes the webserver logs.
 The steps are the following:
 
 ![Batch processing](batch-processing.png)
+
+# Design
+
+## Detailed Architecture
+
+![Detailed processing](architecture.png)

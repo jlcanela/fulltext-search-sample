@@ -7,16 +7,29 @@
 Person(admin, "Browser", $sprite="user")
 System_Boundary(webserver, "Web Server") {
     Container(apache, "Apache Server", "php", $descr="Main web server")
-    Container(filesystem, "Logs", "txt", $descr="All logs")
-    Rel(apache, filesystem, "generates", "https")
+    Container(logs, "Logs", "filesystem", $descr="All logs")
+    Rel(apache, logs, "generates", "https")
     Rel(admin, apache, "browses", "https")
 }
 
 System_Boundary(monitoring, "Monitoring") {
-    Container(log, "Log Resync", "batch", $descr="Clean and resync all the logs")
-    Container(es, "Log Index", "Elasticsearch", $descr="Indices of all logs")
-    Rel_L(log, filesystem, "read", "https")
-    Rel_R(log, es, "write", "https")
+    Container(runner, "Runner", "batch", $descr="Orchestrate the various tasks")
+    Container(curl, "Transfer", "curl", $descr="Transfer data")
+    Container(storage, "Storage", "filesystem", $descr="Contains all the data files")
+    Container(es, "Index", "elasticsearch", $descr="Indices of all logs")
+    Container(clean, "Batch Cleaning", "batch", $descr="Clean and resync all the logs")
+    Container(indexer, "Batch Indexer", "batch", $descr="Index all log data")
+    Container(api, "API", "graphql", $descr="API service")
+    Rel(runner, curl, "trigger", "shell")
+    Rel(runner, clean, "trigger", "spark-submit")
+    Rel(runner, indexer, "trigger", "spark-submit")
+    Rel(curl, logs, "read", "https")
+    Rel(curl, storage, "write", "fs")
+    Rel(clean, storage, "write", "fs")
+    Rel(clean, storage, "read", "fs")
+    Rel(indexer, storage, "read", "fs")
+    Rel(indexer, es, "write", "http")
+    Rel_U(api, es, "read", "http")
 }
 
 @enduml

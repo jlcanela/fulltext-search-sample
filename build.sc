@@ -8,7 +8,7 @@ import mill.modules.Assembly
 
 object Deps {
   val SPARK_VERSION = "3.1.2"
-  val ELASTICSEARCH_VERSION = "7.15.1"
+  val ELASTICSEARCH_VERSION = "7.15.0"
   val ZIO_VERSION = "2.0.0-M4"
 }
 

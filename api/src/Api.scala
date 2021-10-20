@@ -6,7 +6,6 @@ import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.requests.searches.SearchHit
 
-import com.sksamuel.elastic4s.zio.instances._
 import org.elasticsearch.client.RestClient
 import org.apache.http.HttpHost
 import org.apache.http.message.BasicHeader
@@ -18,14 +17,14 @@ import org.apache.http.auth.UsernamePasswordCredentials
 import org.apache.http.auth.AuthScope
 import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback
 import org.apache.http.client.config.RequestConfig
+import com.sksamuel.elastic4s.requests.searches.SearchRequest
 
 object Api {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
     def createClient(host: String, port: Int, user: String, password: String, ssl: Boolean = false) = {
-        import com.sksamuel.elastic4s.http.{NoOpHttpClientConfigCallback}
-
+        
         lazy val provider = {
             val provider = new BasicCredentialsProvider
             val credentials = new UsernamePasswordCredentials(user, password)
@@ -52,7 +51,6 @@ object Api {
         val restClientBuilder = RestClient.builder(formedHost)
         .setHttpClientConfigCallback(httpClientConfigCallback)
         .setRequestConfigCallback(requestConfigCallback)
-        //.setDefaultHeaders(headers)
         JavaClient.fromRestClient(restClientBuilder.build())
     }
 
@@ -66,7 +64,8 @@ object Api {
     }(client => ZIO.succeed(client.close))
 
     def searchApi: ZIO[Any, Serializable, Array[SearchHit]] = for {
-        resp <- connect { client => 
+        resp <- connect { client: ElasticClient => 
+            import com.sksamuel.elastic4s.zio.instances._
             client.execute {
                 search("web").matchQuery("uri", "php").sortByFieldDesc("datetime")
             }
