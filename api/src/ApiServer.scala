@@ -1,22 +1,31 @@
+import example.ExampleData._
+import example.{ ExampleApi, ExampleService }
+
 import zio._
+import zio.stream._
+import zhttp.http._
+import zhttp.service.Server
+import caliban.ZHttpAdapter
 
-/*object ApiServer extends App {
+object ApiServer extends App {
+  private val graphiql = Http.succeed(Response.http(content = HttpData.fromStream(ZStream.fromResource("graphiql.html"))))
 
-    import org.slf4j.Logger;
-    import org.slf4j.LoggerFactory;
-    val logger = LoggerFactory.getLogger(AppServer.getClass);
-    // type Environment = ZEnv
-
-    // val tag = Tag[Environment]
-
-    // override def layer: ZLayer[Has[ZIOAppArgs],Any,Environment] = ZLayer.wire[Environment](ZEnv.live)
-
-    override def run: ZIO[Environment with ZEnv with Has[ZIOAppArgs],Any,Any] = for {
-        _ <- ZIO.succeed(logger.info("start api"))
-     hits <- Api.searchApi
-     _ <- Console.printLine(hits.map(_.sourceAsMap.mkString("|")).mkString("\n"))
-    
-    } yield ()
-
+  def layer: ZLayer[Any, Nothing, ZEnv with ExampleService.ExampleService with Has[ElasticService.ElasticService] with Has[LogService.LogService]] =
+     (ZEnv.live >+> ExampleService.make(sampleCharacters) >+> ElasticService.make >+> LogService.make).orDie
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] =
+    (for {
+      interpreter <- LogApi.api.interpreter
+      _           <- Server
+                       .start(
+                         8088,
+                         Http.route {
+                           case _ -> Root / "api" / "graphql" => ZHttpAdapter.makeHttpService(interpreter)
+                           case _ -> Root / "ws" / "graphql"  => ZHttpAdapter.makeWebSocketService(interpreter)
+                           case _ -> Root / "graphiql"        => graphiql
+                         }
+                       )
+                       .forever
+    } yield ())
+      .provideLayer(layer)
+      .exitCode
 }
-*/

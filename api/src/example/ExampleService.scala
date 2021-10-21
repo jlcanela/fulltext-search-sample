@@ -18,11 +18,7 @@ object ExampleService {
 
     def deletedEvents: ZStream[Any, Nothing, String]
 
-    def findLogs(from: Int, size: Int): UIO[List[Log]]
   }
-
-  def findLogs(from: Int, size: Int): URIO[ExampleService, List[Log]] =
-    URIO.serviceWith(_.findLogs(from, size))
 
   def getCharacters(origin: Option[Origin]): URIO[ExampleService, List[Character]] =
     URIO.serviceWith(_.getCharacters(origin))
@@ -41,8 +37,6 @@ object ExampleService {
       characters  <- Ref.make(initial)
       subscribers <- Hub.unbounded[String]
     } yield new Service {
-
-      def findLogs(from: Int, size: Int): URIO[Any, List[Log]] = ElasticApi.searchApi(from, size).catchAll( _ => ZIO.succeed(List())) // zio.ZIO.succeed(List())
 
       def getCharacters(origin: Option[Origin]): UIO[List[Character]] =
         characters.get.map(_.filter(c => origin.forall(c.origin == _)))

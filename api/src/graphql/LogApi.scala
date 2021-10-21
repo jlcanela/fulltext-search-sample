@@ -1,5 +1,3 @@
-package example
-
 import example.ExampleData._
 import example.ExampleService.ExampleService
 
@@ -11,7 +9,7 @@ import caliban.schema.GenericSchema
 import caliban.wrappers.ApolloTracing.apolloTracing
 import caliban.wrappers.Wrappers._
 
-import zio.URIO
+import zio.{Has, URIO, ZIO}
 import zio.clock.Clock
 import zio.console.Console
 import zio.duration._
@@ -19,31 +17,21 @@ import zio.stream.ZStream
 
 import scala.language.postfixOps
 
-object ExampleApi extends GenericSchema[ExampleService] {
+import example.ExampleService
+import LogService.LogService
+
+object LogApi extends GenericSchema[Has[LogService]] {
 
   case class Queries(
-    @GQLDescription("Return all characters from a given origin")
-    characters: CharactersArgs => URIO[ExampleService, List[Character]],
-    @GQLDeprecated("Use `characters`")
-    character: CharacterArgs => URIO[ExampleService, Option[Character]]
+    logs: LogArgs => URIO[Has[LogService], List[model.Log]]
   )
-  case class Mutations(deleteCharacter: CharacterArgs => URIO[ExampleService, Boolean])
-  case class Subscriptions(characterDeleted: ZStream[ExampleService, Nothing, String])
 
-  implicit val roleSchema           = gen[Role]
-  implicit val characterSchema      = gen[Character]
-  implicit val characterArgsSchema  = gen[CharacterArgs]
-  implicit val charactersArgsSchema = gen[CharactersArgs]
-
-  val api: GraphQL[Console with Clock with ExampleService] =
+  val api: GraphQL[Console with Clock with Has[LogService]] =
     graphQL(
       RootResolver(
         Queries(
-          args => ExampleService.getCharacters(args.origin),
-          args => ExampleService.findCharacter(args.name)
-        ),
-        Mutations(args => ExampleService.deleteCharacter(args.name)),
-        Subscriptions(ExampleService.deletedEvents)
+          args => LogService.findLogs(args.first, args.size),
+        )
       )
     ) @@
       maxFields(200) @@               // query analyzer that limit query fields

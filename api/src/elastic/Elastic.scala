@@ -1,5 +1,3 @@
-package example
-
 import zio._
 
 import com.sksamuel.elastic4s._
@@ -24,17 +22,25 @@ import com.sksamuel.elastic4s.requests.searches.SearchRequest
 import com.sksamuel.elastic4s.zio.instances._
 
 import model.Log
-import example.ExampleApi
 
-object ElasticApi {
+case class ElasticConfig(elasticHost: String, elasticPort: Int, user: String, password: String, ssl: Boolean)
 
-    implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+object ElasticConfig {
+    def get = ElasticConfig(
+        elasticHost = "localhost",
+        elasticPort = 9200,
+        user = "elastic",
+        password = "somethingsecret", 
+        ssl = false)
+}
 
-    def createClient(host: String, port: Int, user: String, password: String, ssl: Boolean = false) = {
+object Elastic {
+
+     def createClient(config: ElasticConfig) = ZIO.effect {
         
         lazy val provider = {
             val provider = new BasicCredentialsProvider
-            val credentials = new UsernamePasswordCredentials(user, password)
+            val credentials = new UsernamePasswordCredentials(config.user, config.password)
             provider.setCredentials(AuthScope.ANY, credentials)
             provider
         }
@@ -53,37 +59,12 @@ object ElasticApi {
 
         } 
         
-        val formedHost = new HttpHost(host, port, if (ssl) "https" else "http")
+        val formedHost = new HttpHost(config.elasticHost, config.elasticPort, if (config.ssl) "https" else "http")
 
         val restClientBuilder = RestClient.builder(formedHost)
         .setHttpClientConfigCallback(httpClientConfigCallback)
         .setRequestConfigCallback(requestConfigCallback)
+
         JavaClient.fromRestClient(restClientBuilder.build())
     }
-
-    def connect /*: ZIO.Release[Any, Throwable, ElasticClient]*/ = ZIO.bracket { ZIO.succeed {
-        val elasticHost = "localhost"
-        val elasticPort = 9200
-        val user = "elastic"
-        val password = "somethingsecret"
-        ElasticClient(createClient(elasticHost, elasticPort, user, password))
-     }
-    }(client => ZIO.succeed(client.close))
-
-    def searchApi(from: Int, size: Int): ZIO[Any, Serializable, List[Log]] = for {
-        resp <- connect { client: ElasticClient => 
-           
-            client.execute {
-                /*val sz = 100
-                val pg = 10
-                val frm = sz * pg*/
-                search("web").query(must(matchAllQuery()).filter(termQuery("uri", "php"))).from(from).size(size).sortByFieldAsc("datetime")
-                // sourceInclude("gps", "populat*") sourceExclude("denonymn", "capit*")
-           }
-        }
-        rr <- resp match {
-            case failure: RequestFailure => ZIO.fail(failure) 
-            case results: RequestSuccess[SearchResponse] => ZIO.succeed(results.result.hits.hits.toList.map(_.sourceAsMap).map(Log.fromMap _))            
-        }
-    } yield rr
 }
