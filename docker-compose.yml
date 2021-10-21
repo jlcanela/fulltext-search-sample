@@ -5,12 +5,16 @@ services:
   container_name: elasticsearch
   environment:
    - discovery.type=single-node
-   - cluster.routing.allocation.disk.threshold_enabled=true
-   - cluster.routing.allocation.disk.watermark.low=65%
-   - cluster.routing.allocation.disk.watermark.high=70%
+   - indices.memory.index_buffer_size=20%
+   - bootstrap.memory_lock=true
+   - "ES_JAVA_OPTS=-Xms2048m -Xmx2048m"
    - xpack.security.enabled=true
    - xpack.security.audit.enabled=true
    - ELASTIC_PASSWORD=somethingsecret
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
   ports:
    - "9200:9200"
   networks:

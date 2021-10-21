@@ -3,7 +3,6 @@ import org.apache.spark.sql.Dataset
 import org.apache.spark.sql.SparkSession
 import org.apache.log4j.Logger;
 
-//import org.elasticsearch.spark._ 
 import org.elasticsearch.spark.sql._
 
 case class AccessLog(ip: String, ident: String, user: String, datetime: String, request: String, status: String, size: String, referer: String, userAgent: String, unk: String)
@@ -28,6 +27,7 @@ object SparkBatch {
         .config("es.nodes.wan.only", "true")
         .config("es.net.http.auth.user", "elastic")
         .config("es.net.http.auth.pass", "somethingsecret")
+        .config("es.batch.size.bytes", 1024*1024*4)
         val spark = builder.getOrCreate()
         f(spark)
         spark.close
@@ -57,7 +57,7 @@ object SparkBatch {
     }
 
     def index(spark: SparkSession) = {
-        val df = spark.read.json(outputPath)
+        val df = spark.read.json(outputPath).repartition(8)
         df.saveToEs("web/logs")
     }
 }

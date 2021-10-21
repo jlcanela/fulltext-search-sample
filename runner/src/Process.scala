@@ -23,12 +23,12 @@ case class ProcessLive(console: Console, clock: Clock) extends Process {
           process <- if (exist) console.printLine(s"$file already exists") else ZIO.attempt(os.proc("curl", "-o", file.toString, "-L", path).spawn().join(1000*30))
     } yield (file, !exist)
 
-    def runSpark(command: String) = ZIO.attempt(os.proc("spark-submit", "--class", "App", s"${os.pwd}/out/batch/assembly/dest/out.jar", command).spawn(cwd=os.pwd).join())
+    def runSpark(command: String) = ZIO.attempt(os.proc("spark-submit", "--class", "SparkCli", s"${os.pwd}/out/spark/assembly/dest/out.jar", command).spawn(cwd=os.pwd).join())
 
     override def runBatch(path: String): ZIO[Has[Console], Throwable, Unit] = for {
       (file, fetched) <- fetchFile(path)
       _ <- if (fetched) runSpark("batch") else Console.printLine("skipping 'spark run batch'")
-      _ <- if (fetched) runSpark("index") else Console.printLine("skipping 'spark run index'")
+      _ <- if (!fetched) runSpark("index") else Console.printLine("skipping 'spark run index'")
     } yield ()
 }
 

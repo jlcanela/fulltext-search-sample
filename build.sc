@@ -50,7 +50,7 @@ object spark extends ScalaModule { outer =>
     def scalaVersion = outer.scalaVersion
     def moduleDeps = Seq(outer)
     def ivyDeps = outer.ivySparkDeps
-    override def mainClass = T { Some("App") }
+    override def mainClass = T { Some("SparkCli") }
     def forkArgs = Seq("-Dspark.master=local[*]")
   }
 }

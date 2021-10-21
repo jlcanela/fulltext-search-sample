@@ -11,8 +11,9 @@ object SparkCli extends ZIOApp {
     override def layer: ZLayer[Has[ZIOAppArgs],Any,Environment] = ZLayer.wire[Environment](ZEnv.live)
 
     def run(command: String) = command match {
-        case "batch" => Exec(Exec.clean _)
-        case "index" => Exec(Exec.index _)
+        case "batch" => SparkBatch(SparkBatch.clean _)
+        case "index" => SparkBatch(SparkBatch.index _)
+        case "streaming" => SparkStreaming.run
         case _ => println(s"command '$command' not recognized (batch|index)")
     }
     override def run: ZIO[Environment with ZEnv with Has[ZIOAppArgs],Any,Any] = for {
