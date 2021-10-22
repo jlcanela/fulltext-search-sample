@@ -1,6 +1,3 @@
-import example.ExampleData._
-import example.{ExampleApi, ExampleService}
-
 import zio._
 import zio.stream._
 import zhttp.http._
@@ -21,14 +18,12 @@ object ApiServer extends App {
   )
 
   def layer
-      : ZLayer[Any, Nothing, ZEnv with ExampleService.ExampleService with Has[
+      : ZLayer[Any, Nothing, ZEnv with Has[
         ElasticService.ElasticService
       ] with Has[LogService.LogService]] =
-    (ZEnv.live >+> ExampleService.make(
-      sampleCharacters
-    ) >+> ElasticService.make >+> LogService.make).orDie
+    (ZEnv.live >+> ElasticService.make >+> LogService.make).orDie
 
-  def startServer = (for {
+  def startServer = for {
     interpreter <- LogApi.api.interpreter
     _ <- Server
       .start(
@@ -42,20 +37,22 @@ object ApiServer extends App {
           case _ -> Root / "app" / resource => app(resource)
         }
       ).forever
-  } yield ())
+  } yield ()
+
+  def cleanIndex: ZIO[Has[ElasticService.ElasticService], Throwable, ExitCode] =  for {
+    _ <- ElasticService.removeIndex("logs")
+  } yield ExitCode(0)
+  /*)
     .provideLayer(layer)
     .exitCode
-
-  def cleanIndex =  for {
-    _ <- console.putStrLn("clean index").orDie
-  } yield ExitCode(0)
-  
+  */
   override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] =
-    args match {
+    (args match {
       case List("start") => startServer
-      case List("clean-index") => cleanIndex
+      case List("clean-index") => cleanIndex.provideLayer(layer).exitCode
       case _ => for { 
           _ <- console.putStrLn(s"Command '${args.mkString(" ")}' not recognized").orDie
       } yield ExitCode(-1)
-    }
+    }).provideLayer(layer)
+    .exitCode
 }

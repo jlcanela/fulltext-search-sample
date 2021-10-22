@@ -37,5 +37,4 @@ object ExampleData {
     Character("Roberta Draper", List("Bobbie", "Gunny"), MARS, None)
   )
 
-  case class LogArgs(first: Int, size: Int)
 }

@@ -1,6 +1,3 @@
-import example.ExampleData._
-import example.ExampleService.ExampleService
-
 import caliban.GraphQL
 import caliban.GraphQL.graphQL
 import caliban.RootResolver
@@ -17,16 +14,20 @@ import zio.stream.ZStream
 
 import scala.language.postfixOps
 
-import example.ExampleService
 import LogService.LogService
+import ElasticService.ElasticService
+
+case class RemoveIndexArgs(name: String)
+case class LogArgs(first: Int, size: Int)
 
 object LogApi extends GenericSchema[Has[LogService]] {
 
-  case class Queries(
-    logs: LogArgs => URIO[Has[LogService], LogResult]
-  )
-  case class Mutations( deleteIndex: String => URIO[Has[LogService], Unit])
+  case class Queries(logs: LogArgs => URIO[Has[LogService], LogResult])
+  case class Mutations(removeIndex: RemoveIndexArgs => URIO[Has[LogService], Boolean])
   case class Subscriptions(calls: ZStream[Has[LogService], Nothing, String])
+
+  implicit val deleteIndexArgsSchema = gen[RemoveIndexArgs]
+  implicit val mutationSchema = gen[Mutations]
 
   val api: GraphQL[Console with Clock with Has[LogService]] =
     graphQL(
@@ -34,7 +35,7 @@ object LogApi extends GenericSchema[Has[LogService]] {
         Queries(
           args => LogService.findLogs(args.first, args.size),
         ),
-        Mutations(name => LogService.deleteIndex(name)),
+        Mutations(args => LogService.removeIndex(args.name).orDie),
         Subscriptions(LogService.calls)
       )
     ) @@

@@ -1,4 +1,3 @@
-import example.ExampleData._
 import zio.stream.ZStream
 import zio.{ Has, Hub, Ref, UIO, URIO, ZLayer, ZIO }
 import model.Log
@@ -8,19 +7,20 @@ import com.sksamuel.elastic4s.requests.searches.SearchHit
 import zio.console
 
 case class LogResult(count: Long, logs: List[Log])
+//  implicit val charactersArgsSchema = gen[CharactersArgs]
 
 object LogService {
 
   trait LogService {
     def findLogs(from: Int, size: Int): UIO[LogResult]
-    def deleteIndex(name: String): UIO[Unit]
+    def removeIndex(name: String): UIO[Boolean]
     def calls: ZStream[Any, Nothing, String]
   }
 
   def findLogs(from: Int, size: Int): URIO[Has[LogService], LogResult] =
     ZIO.serviceWith(_.findLogs(from, size))
 
-  def deleteIndex(name: String): URIO[Has[LogService], Unit] = ZIO.serviceWith(_.deleteIndex(name))
+  def removeIndex(name: String): ZIO[Has[LogService], Throwable, Boolean] = ZIO.serviceWith(_.removeIndex(name))
   
   def calls: ZStream[Has[LogService], Nothing, String] =
     ZStream.accessStream(_.get.calls)
@@ -47,7 +47,8 @@ case class LogLive(subscribers: Hub[String], elastic: ElasticService.ElasticServ
         x => LogResult(0, List(Log("","","","","","","","","","", "", x.toString))), 
         x => x)
 
-    def deleteIndex(name: String): UIO[Unit] = ZIO.succeed(())
+    //def deleteIndex(name: String): UIO[Unit] = ZIO.succeed(())
+    def removeIndex(name: String) = elastic.removeIndex(name).orDie
 
     def calls: ZStream[Any, Nothing, String] =
         ZStream.unwrapManaged(subscribers.subscribe.map(ZStream.fromQueue(_)))

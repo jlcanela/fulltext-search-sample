@@ -29,7 +29,11 @@ object ElasticService {
 
     trait ElasticService {
         def search(req: SearchRequest): Task[Either[RequestFailure, SearchResult]]
+        def removeIndex(name: String): Task[Boolean]
     }
+
+   // def search(req: SearchRequest) = ZIO.serv
+    def removeIndex(name: String): ZIO[Has[ElasticService.ElasticService], Throwable, Boolean] = ZIO.serviceWith(_.removeIndex(name))
   
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -54,10 +58,10 @@ case class ElasticLive() extends ElasticService.ElasticService {
         } yield hits
     }
 
-    def cleanIndex(index: String) = connect { client => for {
+    def removeIndex(index: String): Task[Boolean] = connect { client => for {
             _ <- client.execute {
                 deleteIndex(index)
             }
-        } yield ()
+        } yield (true)
     }
 }
