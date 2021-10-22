@@ -23,15 +23,19 @@ import LogService.LogService
 object LogApi extends GenericSchema[Has[LogService]] {
 
   case class Queries(
-    logs: LogArgs => URIO[Has[LogService], List[model.Log]]
+    logs: LogArgs => URIO[Has[LogService], LogResult]
   )
+  case class Mutations( deleteIndex: String => URIO[Has[LogService], Unit])
+  case class Subscriptions(calls: ZStream[Has[LogService], Nothing, String])
 
   val api: GraphQL[Console with Clock with Has[LogService]] =
     graphQL(
       RootResolver(
         Queries(
           args => LogService.findLogs(args.first, args.size),
-        )
+        ),
+        Mutations(name => LogService.deleteIndex(name)),
+        Subscriptions(LogService.calls)
       )
     ) @@
       maxFields(200) @@               // query analyzer that limit query fields

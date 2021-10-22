@@ -6,6 +6,9 @@
 .metals
 .vscode
 access.log.gz
+logs
 node_modules
 out
 out-json
+report-json
+spark-logs

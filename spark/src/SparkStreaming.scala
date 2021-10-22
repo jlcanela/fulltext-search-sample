@@ -1,3 +1,12 @@
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.Dataset
+
+import org.apache.spark.sql.Encoder
+import org.apache.spark.sql.catalyst.ScalaReflection
+import org.apache.spark.sql.types.StructType
+
+case class Log(ip: String, ident: String, user: String, datetime: String, status: String, size: String, referer: String, userAgent: String, unk: String, method: String, uri: String, http: String)
+
 object SparkStreaming {
 
   def run = {
@@ -11,8 +20,25 @@ object SparkStreaming {
 
     val conf =
       new SparkConf().setMaster("local[2]").setAppName("NetworkWordCount")
-    val ssc = new StreamingContext(conf, Seconds(1))
+    val sc = SparkContext.getOrCreate(conf)
+    val spark = SparkSession.builder.getOrCreate()
+    val ssc = new StreamingContext(sc, Seconds(3))
 
+    val logs = ssc.textFileStream("logs")/*.transform { rddRaw =>
+      //val rawDfValue = rddRaw.selectExpr("CAST(value AS STRING)").as[String]
+      val schema = ScalaReflection.schemaFor[Log].dataType.asInstanceOf[StructType]
+      rddRaw.map
+      val df = spark.createDataFrame(rddRaw)
+      rddRaw.select(from_json(col("value"), schema).as("data")).select("data.*").rdd
+
+    }
+*/
+    
+
+  
+    logs.print()
+
+    /*
     // Create a DStream that will connect to hostname:port, like localhost:9999
     val lines = ssc.socketTextStream("localhost", 9999)
 
@@ -25,7 +51,7 @@ object SparkStreaming {
 
     // Print the first ten elements of each RDD generated in this DStream to the console
     wordCounts.print()
-
+*/
     ssc.start() // Start the computation
     ssc.awaitTermination() // Wait for the computation to terminate
   }

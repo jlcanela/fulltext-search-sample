@@ -20,7 +20,7 @@ object SparkBatch {
 
     val outputPath = "out-json"
 
-    def apply(f: SparkSession => Unit) = {
+    def run(f: SparkSession => Unit) = {
         val builder = SparkSession.builder.appName("Spark Batch")
         builder
         .config("es.index.auto.create", "true")
@@ -28,6 +28,8 @@ object SparkBatch {
         .config("es.net.http.auth.user", "elastic")
         .config("es.net.http.auth.pass", "somethingsecret")
         .config("es.batch.size.bytes", 1024*1024*4)
+        .config("spark.eventLog.enabled", true)
+        .config("spark.eventLog.dir", "./spark-logs")
         val spark = builder.getOrCreate()
         f(spark)
         spark.close
@@ -59,5 +61,56 @@ object SparkBatch {
     def index(spark: SparkSession) = {
         val df = spark.read.json(outputPath).repartition(8)
         df.saveToEs("web/logs")
+    }
+
+    def report(spark: SparkSession) = {
+        import spark.implicits._
+        val df = spark.read.json(outputPath).withColumn("date", col("datetime").cast("date"))
+        df.createOrReplaceTempView("logs")
+        val dates = spark.sql("""
+        with dates as (
+            select date, count(*) as cnt 
+            from logs 
+            group by date 
+            having count(*) > 20000
+            order by cnt desc)
+
+        select date from dates             
+        """).createTempView("dates")
+
+       /* 
+       val countByIp = spark.sql("""
+        with ips as (
+            select date, ip, count(*) as cnt
+            from logs
+            group by date, ip
+        )
+
+        select date, collect_list(struct(ip, cnt as count)) as ip_list from ips group by date
+        """).createTempView("ips")
+        */
+
+        def createCountByFieldView(field: String) = spark.sql(s"""
+        with ${field}s as (
+            select date, $field, count(*) as cnt
+            from logs
+            group by date, $field
+        )
+
+        select date, collect_list(struct($field, cnt as count)) as ${field}_list from ${field}s group by date
+        """).createTempView(s"${field}s")
+
+        createCountByFieldView("ip")
+        createCountByFieldView("uri")
+
+        val report = spark.sql("""
+        select dates.date, ips.ip_list, uris.uri_list
+        from dates 
+        inner join ips on ips.date = dates.date 
+        inner join uris on uris.date = dates.date
+        """)
+        
+        report.coalesce(1).write.mode("Overwrite").json("report-json")
+        
     }
 }

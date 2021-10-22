@@ -36,6 +36,8 @@ object spark extends ScalaModule { outer =>
     ivy"dev.zio::zio:${ZIO_V2}"
   )
 
+  def moduleDeps = Seq(model)
+
   def compileIvyDeps = ivySparkDeps
 
   def assemblyRules =

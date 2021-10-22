@@ -26,3 +26,15 @@ Stop cluster and clean volumes:
 ```
 docker-compose down -v
 ```
+
+# Spark history
+
+```
+SPARK_HISTORY_OPTS="-Dspark.history.fs.logDirectory=spark-logs" $SPARK_HOME/sbin/start-history-server.sh
+```
+
+```
+$SPARK_HOME/sbin/stop-history-server.sh
+```
+
+http://localhost:18080/
