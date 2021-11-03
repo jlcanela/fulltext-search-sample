@@ -103,3 +103,18 @@ object model extends ScalaModule {
   def scalaVersion = "2.13.6"
   
 }
+
+object ziotest extends ScalaModule {
+
+  import Deps._ 
+
+  def scalaVersion = "2.13.6"
+
+  def moduleDeps = Seq(model)
+
+  def ivyDeps = Agg(
+    ivy"dev.zio::zio::${ZIO_V2}",
+    ivy"ch.qos.logback:logback-classic:1.2.6"
+  )
+
+}

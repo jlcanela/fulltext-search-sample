@@ -9,10 +9,11 @@ case class AccessLog(ip: String, ident: String, user: String, datetime: String, 
 object AccessLog {
     val R = """^(?<ip>[0-9.]+) (?<identd>[^ ]) (?<user>[^ ]) \[(?<datetime>[^\]]+)\] \"(?<request>[^\"]*)\" (?<status>[^ ]*) (?<size>[^ ]*) \"(?<referer>[^\"]*)\" \"(?<useragent>[^\"]*)\" \"(?<unk>[^\"]*)\"""".r
 
-    def fromString(s: String) = for {
-        seq <- R.unapplySeq(s)
-        Seq(ip: String, ident: String, user: String, datetime: String, request: String, status: String, size: String, referer: String, userAgent: String, unk: String) = seq
-    } yield AccessLog(ip, ident, user, datetime, request, status, size, referer, userAgent, unk) 
+    def fromString(s: String) = s match { 
+        case R(ip: String, ident: String, user: String, datetime: String, request: String, status: String, size: String, referer: String, userAgent: String, unk: String) => Some(AccessLog(ip, ident, user, datetime, request, status, size, referer, userAgent, unk))
+        case _ => None 
+    }
+ 
 }
 
 object SparkBatch {
