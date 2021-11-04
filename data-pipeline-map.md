@@ -22,14 +22,45 @@ spark
 - recomputation due to shuffle
 - spark streaming http://spark.apache.org/docs/latest/streaming-programming-guide.html
 - spark hands on https://github.com/jlcanela/spark-hands-on/wiki
+- optimizations https://blog.cloudera.com/how-does-apache-spark-3-0-increase-the-performance-of-your-sql-workloads/
 
 data culture
 - history of time : https://www.joda.org/joda-time/
 - character encoding : http://www.i18nqa.com/debug/bug-utf-8-latin1.html
 - let’s dig about time https://www.kaggle.com/olistbr/brazilian-ecommerce
 
+elastic search 
+- https://www.elastic.co/what-is/elk-stack
+- https://medium.com/everythingatonce/architecture-of-elastic-search-installation-part-2-ec56a5a3c192
+- https://lucene.apache.org/core/
+- https://www.geeksforgeeks.org/inverted-index/#:~:text=An%20inverted%20index%20is%20an,document%20or%20a%20web%20page.
+
 machine learning
-- Spark NLP https://www.johnsnowlabs.com/spark-nlp/
+- Spark NLP https://www.johnsnowlabs.com/spark-nlp/ and 
+- Spark NLP github https://github.com/JohnSnowLabs/spark-nlp#quick-start
+
+mesos / kubernetes and Spark
+- http://spark.apache.org/docs/latest/running-on-mesos.html
+- https://www.datamechanics.co/blog-post/pros-and-cons-of-running-apache-spark-on-kubernetes
+
+aws services
+- lake formation https://aws.amazon.com/lake-formation/?nc1=h_ls&whats-new-cards.sort-by=item.additionalFields.postDateTime&whats-new-cards.sort-order=desc
+- managed services 
+
+functional programming
+- https://zio.dev/
+
+dag
+- airflow https://airflow.apache.org/
+- kubeflow https://www.kubeflow.org/
+- mlflow https://mlflow.org/
+- aws glue https://docs.aws.amazon.com/glue/latest/dg/workflows_overview.html
+
+Kafka
+- confluent website
+- aphyr https://aphyr.com/posts/293-call-me-maybe-kafka
+- getting started https://docs.confluent.io/platform/current/quickstart/ce-docker-quickstart.html
+
 
 java
 - jar file
