@@ -39,7 +39,7 @@ object spark extends ScalaModule { outer =>
     ivy"org.apache.spark::spark-sql-kafka-0-10:3.1.2"
   )
 
-  override def mainClass = T { Some("OlistCli") }
+  override def mainClass = T { Some("StreamingApp") }
 
   def compileIvyDeps = ivySparkDeps
 
