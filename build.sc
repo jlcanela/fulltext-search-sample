@@ -17,11 +17,14 @@ object spark extends ScalaModule { outer =>
 
   import Deps._ 
 
+  val dummy = 1
+  
   def scalaVersion = "2.12.15"
   def scalacOptions =
     Seq("-encoding", "utf-8", "-explaintypes", "-feature", "-deprecation")
 
   def ivySparkDeps = Agg(
+    ivy"org.apache.spark::spark-avro:${SPARK_VERSION}",
     ivy"org.apache.spark::spark-sql:${SPARK_VERSION}"
       .exclude("org.slf4j" -> "slf4j-log4j12"),
     ivy"org.apache.spark::spark-streaming:${SPARK_VERSION}"
@@ -33,7 +36,9 @@ object spark extends ScalaModule { outer =>
   def ivyDeps = Agg(
     ivy"com.lihaoyi::upickle:0.9.7",
     ivy"org.elasticsearch::elasticsearch-spark-30:${ELASTICSEARCH_VERSION}",
-    ivy"dev.zio::zio:${ZIO_V2}"
+    ivy"dev.zio::zio:${ZIO_V2}",
+    ivy"io.getquill::quill-spark:3.9.0",
+    ivy"org.apache.spark::spark-sql-kafka-0-10:3.1.2"
   )
 
   def moduleDeps = Seq(model)
@@ -76,6 +81,10 @@ object runner extends ScalaModule {
         res = os.proc("java", "-jar", "tools/plantuml.1.2021.12.jar", file).call()
     } yield path.toString
     
+  }
+
+  def myCommand() = T.command {
+    println("Execute my command")
   }
 }
 

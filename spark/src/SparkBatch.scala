@@ -5,6 +5,10 @@ import org.apache.log4j.Logger;
 
 import org.elasticsearch.spark.sql._
 
+import io.getquill.{Query, QuillSparkContext}
+
+case class SimpleLog(value: String)
+
 case class AccessLog(ip: String, ident: String, user: String, datetime: String, request: String, status: String, size: String, referer: String, userAgent: String, unk: String)
 object AccessLog {
     val R = """^(?<ip>[0-9.]+) (?<identd>[^ ]) (?<user>[^ ]) \[(?<datetime>[^\]]+)\] \"(?<request>[^\"]*)\" (?<status>[^ ]*) (?<size>[^ ]*) \"(?<referer>[^\"]*)\" \"(?<useragent>[^\"]*)\" \"(?<unk>[^\"]*)\"""".r
@@ -13,13 +17,16 @@ object AccessLog {
         case R(ip: String, ident: String, user: String, datetime: String, request: String, status: String, size: String, referer: String, userAgent: String, unk: String) => Some(AccessLog(ip, ident, user, datetime, request, status, size, referer, userAgent, unk))
         case _ => None 
     }
+
+    def fromStringNullable(s: String): AccessLog = s match { 
+        case R(ip: String, ident: String, user: String, datetime: String, request: String, status: String, size: String, referer: String, userAgent: String, unk: String) => AccessLog(ip, ident, user, datetime, request, status, size, referer, userAgent, unk)
+        case _ => null 
+    }
  
 }
 
 object SparkBatch {
     val log = Logger.getLogger(SparkBatch.getClass().getName())
-
-    val outputPath = "out-json"
 
     def run(f: SparkSession => Unit) = {
         val builder = SparkSession.builder.appName("Spark Batch")
@@ -29,19 +36,42 @@ object SparkBatch {
         .config("es.net.http.auth.user", "elastic")
         .config("es.net.http.auth.pass", "somethingsecret")
         .config("es.batch.size.bytes", 1024*1024*4)
-        .config("spark.eventLog.enabled", true)
-        .config("spark.eventLog.dir", "./spark-logs")
+        //.config("spark.eventLog.enabled", true)
+        //.config("spark.eventLog.dir", "./spark-logs")
         val spark = builder.getOrCreate()
         f(spark)
         spark.close
     }
 
-    def clean(spark: SparkSession) = {
+    def cleanQuill(spark: SparkSession) = {
+        implicit val sqlContext = spark.sqlContext
+        import sqlContext.implicits._
+        import QuillSparkContext._
+
+        spark.udf.register("asAccessLog", (s: String) => AccessLog.fromStringNullable(s))
+        val asAccessLogUdf = quote {
+            (s: String) => infix"asAccessLog($s)".as[AccessLog]
+        }
+
+        val accessLogDS: Dataset[SimpleLog] = spark.read.text("access.log.gz").as[SimpleLog]
+        val accessLogs = quote {
+           liftQuery(accessLogDS)
+        }
+
+        val result = quote {
+            (q: Query[SimpleLog]) => q.map(x => asAccessLogUdf(x.value))
+        }
+
+        val ds: Dataset[AccessLog] = QuillSparkContext.run(result(accessLogs))
+        ds.explain(true)
+    }    
+
+    def clean(spark: SparkSession, in: String, out: String) = {
        val REQ_EX = "([^ ]+)[ ]+([^ ]+)[ ]+([^ ]+)".r
        
        import spark.implicits._
 
-       def readSource = spark.read.text("access.log.gz").as[String]
+       def readSource = spark.read.text(in).as[String]
 
        def cleanData(ds: Dataset[String]) = {
             val logs = ds.flatMap(AccessLog.fromString _)
@@ -56,17 +86,17 @@ object SparkBatch {
 
        val dsExtended = cleanData(readSource)
        log.info(s"${dsExtended.schema.toDDL}")
-       dsExtended.write.option("compression", "gzip").mode("Overwrite").json(outputPath)
+       dsExtended.write.option("compression", "gzip").mode("Overwrite").parquet(out)
     }
 
-    def index(spark: SparkSession) = {
-        val df = spark.read.json(outputPath).repartition(8)
+    def index(spark: SparkSession, in: String) = {
+        val df = spark.read.json(in).repartition(8)
         df.saveToEs("web/logs")
     }
 
-    def report(spark: SparkSession) = {
+    def report(spark: SparkSession, in: String, out: String) = {
         import spark.implicits._
-        val df = spark.read.json(outputPath).withColumn("date", col("datetime").cast("date"))
+        val df = spark.read.parquet(in).withColumn("date", col("datetime").cast("date"))
         df.createOrReplaceTempView("logs")
         val dates = spark.sql("""
         with dates as (
@@ -111,7 +141,7 @@ object SparkBatch {
         inner join uris on uris.date = dates.date
         """)
         
-        report.coalesce(1).write.mode("Overwrite").json("report-json")
+        report.coalesce(1).write.mode("Overwrite").parquet(out)
         
     }
 }
