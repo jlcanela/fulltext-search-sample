@@ -17,8 +17,6 @@ object spark extends ScalaModule { outer =>
 
   import Deps._ 
 
-  val dummy = 1
-  
   def scalaVersion = "2.12.15"
   def scalacOptions =
     Seq("-encoding", "utf-8", "-explaintypes", "-feature", "-deprecation")
@@ -40,8 +38,6 @@ object spark extends ScalaModule { outer =>
     ivy"io.getquill::quill-spark:3.9.0",
     ivy"org.apache.spark::spark-sql-kafka-0-10:3.1.2"
   )
-
-  def moduleDeps = Seq(model)
 
   def compileIvyDeps = ivySparkDeps
 
@@ -83,9 +79,6 @@ object runner extends ScalaModule {
     
   }
 
-  def myCommand() = T.command {
-    println("Execute my command")
-  }
 }
 
 object api extends ScalaModule {
@@ -93,8 +86,6 @@ object api extends ScalaModule {
   import Deps._ 
 
   def scalaVersion = "2.13.6"
-
-  def moduleDeps = Seq(model)
 
   def ivyDeps = Agg(
     ivy"dev.zio::zio::${ZIO_V1}",
@@ -107,19 +98,11 @@ object api extends ScalaModule {
 
 }
 
-object model extends ScalaModule {
-
-  def scalaVersion = "2.13.6"
-  
-}
-
 object ziotest extends ScalaModule {
 
   import Deps._ 
 
   def scalaVersion = "2.13.6"
-
-  def moduleDeps = Seq(model)
 
   def ivyDeps = Agg(
     ivy"dev.zio::zio::${ZIO_V2}",

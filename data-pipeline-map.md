@@ -1,5 +1,3 @@
-
-
 Usefulness of data pipeline 
 
 diagram / modelling
@@ -24,12 +22,26 @@ spark
 - spark hands on https://github.com/jlcanela/spark-hands-on/wiki
 - optimizations https://blog.cloudera.com/how-does-apache-spark-3-0-increase-the-performance-of-your-sql-workloads/
 
+spark-streaming with Kafka
+- https://spark.apache.org/docs/latest/streaming-programming-guide.html
+- https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html
+- https://spark.apache.org/docs/latest/sql-data-sources-avro.html
+- https://www.linkedin.com/pulse/spark-structured-stream-kafka-avro-messages-hari-ramesh/
+- https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/
+
+devops / architecture
+- environment: dev / sit or integration-testing  / qa / preprod / prod 
+- cloud patterns https://www.cloudcomputingpatterns.org/
+
+test / QA
+- https://softwaretestingfundamentals.com/
+
 data culture
 - history of time : https://www.joda.org/joda-time/
 - character encoding : http://www.i18nqa.com/debug/bug-utf-8-latin1.html
 - let’s dig about time https://www.kaggle.com/olistbr/brazilian-ecommerce
 
-elastic search 
+elastic search
 - https://www.elastic.co/what-is/elk-stack
 - https://medium.com/everythingatonce/architecture-of-elastic-search-installation-part-2-ec56a5a3c192
 - https://lucene.apache.org/core/
