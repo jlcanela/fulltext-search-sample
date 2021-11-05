@@ -39,6 +39,8 @@ object spark extends ScalaModule { outer =>
     ivy"org.apache.spark::spark-sql-kafka-0-10:3.1.2"
   )
 
+  override def mainClass = T { Some("OlistCli") }
+
   def compileIvyDeps = ivySparkDeps
 
   def assemblyRules =
@@ -53,7 +55,7 @@ object spark extends ScalaModule { outer =>
     def scalaVersion = outer.scalaVersion
     def moduleDeps = Seq(outer)
     def ivyDeps = outer.ivySparkDeps
-    override def mainClass = T { Some("SparkCli") }
+    override def mainClass = outer.mainClass
     def forkArgs = Seq("-Dspark.master=local[*]")
   }
 }
