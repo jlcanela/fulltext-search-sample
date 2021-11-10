@@ -49,20 +49,20 @@ object SparkStreaming {
       .readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", "localhost:9092")
-      //.option("subscribe", "pageviews")
-      .option("subscribe", "users")
+      .option("subscribe", "pageviews")
       .option("startingOffsets", "latest")
       .load()
-      .select(
+      .withColumn("key", col("key").cast("String"))
+      /*.select(
         col("key").cast("string"),
         col("value"),
        // from_avro(col("value"), pageViewAvro).as("avro")
-      )
+      )*/
 
     df.printSchema()
 
     val data = df
-      .selectExpr("cast(value as string) as value")
+     // .selectExpr("cast(value as string) as value")
      // .filter(col("userid").=!=(""))
 
     val query2 = data

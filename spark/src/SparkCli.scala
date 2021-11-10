@@ -17,6 +17,7 @@ object SparkCli extends ZIOApp {
         case Array("index", path) => SparkBatch.run((spark: SparkSession) => SparkBatch.index(spark, path))
         case Array("report", in, out) => SparkBatch.run((spark: SparkSession) => SparkBatch.report(spark, in, out))
         case Array("stream") => SparkStreaming.run
+        case Array("stream", "KafkaDirectStreamPageviews") => stream.KafkaDirectStreamPageviews.main(Array())
         case _ => println(s"command '$command' not recognized (batch|index)")
     }
     override def run: ZIO[Environment with ZEnv with Has[ZIOAppArgs],Any,Any] = for {

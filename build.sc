@@ -36,10 +36,9 @@ object spark extends ScalaModule { outer =>
     ivy"org.elasticsearch::elasticsearch-spark-30:${ELASTICSEARCH_VERSION}",
     ivy"dev.zio::zio:${ZIO_V2}",
     ivy"io.getquill::quill-spark:3.9.0",
+    ivy"org.apache.spark::spark-streaming-kafka-0-10:3.1.2",
     ivy"org.apache.spark::spark-sql-kafka-0-10:3.1.2"
   )
-
-  override def mainClass = T { Some("StreamingApp") }
 
   def compileIvyDeps = ivySparkDeps
 
@@ -55,7 +54,8 @@ object spark extends ScalaModule { outer =>
     def scalaVersion = outer.scalaVersion
     def moduleDeps = Seq(outer)
     def ivyDeps = outer.ivySparkDeps
-    override def mainClass = outer.mainClass
+    override def mainClass = T { Some("SparkCli") }
+
     def forkArgs = Seq("-Dspark.master=local[*]")
   }
 }
