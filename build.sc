@@ -94,8 +94,8 @@ object api extends ScalaModule {
     ivy"com.sksamuel.elastic4s::elastic4s-client-esjava:${ELASTICSEARCH_VERSION}",
     ivy"com.google.guava:guava:31.0.1-jre",
     ivy"ch.qos.logback:logback-classic:1.2.6",
-    ivy"com.github.ghostdogpr::caliban:1.2.1",
-    ivy"com.github.ghostdogpr::caliban-zio-http:1.2.1",
+    ivy"com.github.ghostdogpr::caliban:1.2.4",
+    ivy"com.github.ghostdogpr::caliban-zio-http:1.2.4",
   )
 
 }

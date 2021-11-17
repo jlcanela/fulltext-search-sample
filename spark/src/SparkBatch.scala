@@ -90,7 +90,7 @@ object SparkBatch {
     }
 
     def index(spark: SparkSession, in: String) = {
-        val df = spark.read.json(in).repartition(8)
+        val df = spark.read.parquet(in).repartition(8)
         df.saveToEs("web/logs")
     }
 

@@ -5,6 +5,8 @@ import model.Log
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.requests.searches.SearchHit
 import zio.console
+import zio.console.Console
+import zio.stream.ZSink
 
 case class LogResult(count: Long, logs: List[Log])
 //  implicit val charactersArgsSchema = gen[CharactersArgs]
@@ -25,14 +27,17 @@ object LogService {
   def calls: ZStream[Has[LogService], Nothing, String] =
     ZStream.accessStream(_.get.calls)
 
-  def make: ZLayer[Has[ElasticService.ElasticService], Nothing, Has[LogService]] = ZLayer.fromEffect(for {
+  def make: ZLayer[Console with Has[ElasticService.ElasticService], Nothing, Has[LogService]] = ZLayer.fromEffect(for {
     subscribers <- Hub.unbounded[String]
+    console <- ZIO.service[Console.Service]
     elastic <- ZIO.service[ElasticService.ElasticService]
-  } yield LogLive(subscribers, elastic))
+  } yield LogLive(console, subscribers, elastic))
   
 }
 
-case class LogLive(subscribers: Hub[String], elastic: ElasticService.ElasticService) extends LogService.LogService {
+case class LogLive(console: Console.Service, subscribers: Hub[String], elastic: ElasticService.ElasticService) extends LogService.LogService {
+
+    val x = ZStream.unwrapManaged(subscribers.subscribe.map(ZStream.fromQueue(_))).run(ZSink.foreach(x => console.putStrLn(x)))
 
     def findLogs(from: Int, size: Int): UIO[LogResult] = (for {
         searchResult <- ZIO.absolve(elastic.search {
@@ -44,11 +49,10 @@ case class LogLive(subscribers: Hub[String], elastic: ElasticService.ElasticServ
       .toList.map(_.sourceAsMap)
       .map(Log.fromMap _)))
       .fold(
-        x => LogResult(0, List(Log("","","","","","","","","","", "", x.toString))), 
+        x => LogResult(0, List(Log(x))), 
         x => x)
 
-    //def deleteIndex(name: String): UIO[Unit] = ZIO.succeed(())
-    def removeIndex(name: String) = elastic.removeIndex(name).orDie
+    def removeIndex(name: String) = subscribers.publish(s"removeIndex $name") //elastic.removeIndex(name).orDie
 
     def calls: ZStream[Any, Nothing, String] =
         ZStream.unwrapManaged(subscribers.subscribe.map(ZStream.fromQueue(_)))

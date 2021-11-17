@@ -21,8 +21,6 @@ import org.apache.http.auth.AuthScope
 import com.sksamuel.elastic4s.requests.searches.SearchRequest
 import com.sksamuel.elastic4s.zio.instances._
 
-import model.Log
-
 case class SearchResult(count: Long, hits: Array[SearchHit])
 
 object ElasticService {

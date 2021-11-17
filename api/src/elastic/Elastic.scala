@@ -21,8 +21,6 @@ import org.apache.http.auth.AuthScope
 import com.sksamuel.elastic4s.requests.searches.SearchRequest
 import com.sksamuel.elastic4s.zio.instances._
 
-import model.Log
-
 case class ElasticConfig(elasticHost: String, elasticPort: Int, user: String, password: String, ssl: Boolean)
 
 object ElasticConfig {
