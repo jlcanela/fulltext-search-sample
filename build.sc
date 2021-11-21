@@ -71,6 +71,7 @@ object runner extends ScalaModule {
     ivy"com.lihaoyi::os-lib:0.7.8"
   )
 
+  val aaa = 1
   def genPuml() = T.command {
     println("Generating documentation")
     for {
@@ -96,7 +97,13 @@ object api extends ScalaModule {
     ivy"ch.qos.logback:logback-classic:1.2.6",
     ivy"com.github.ghostdogpr::caliban:1.2.4",
     ivy"com.github.ghostdogpr::caliban-zio-http:1.2.4",
+    ivy"com.github.ghostdogpr::caliban-http4s:1.2.4",
+    ivy"org.http4s::http4s-server:0.23.6", 
+    ivy"org.http4s::http4s-blaze-server:0.23.6", 
   )
+
+  override def mainClass = T { Some("ApiServer") }
+
 
 }
 

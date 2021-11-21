@@ -5,6 +5,7 @@
 .history
 .metals
 .vscode
+data
 access.log.gz
 logs
 node_modules

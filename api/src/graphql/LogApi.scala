@@ -16,13 +16,17 @@ import scala.language.postfixOps
 
 import LogService.LogService
 import ElasticService.ElasticService
+import model.Log
 
 case class RemoveIndexArgs(name: String)
 case class LogArgs(first: Int, size: Int)
 
 object LogApi extends GenericSchema[Has[LogService]] {
 
-  case class Queries(logs: LogArgs => URIO[Has[LogService], LogResult])
+  case class Queries(
+    logsCount: () => URIO[Has[LogService], Long],
+    logs: LogArgs => ZIO[Has[LogService], Throwable, List[Log]],
+  )
   case class Mutations(removeIndex: RemoveIndexArgs => URIO[Has[LogService], Boolean])
   case class Subscriptions(calls: String => ZStream[Has[LogService], Nothing, String])
 
@@ -33,6 +37,7 @@ object LogApi extends GenericSchema[Has[LogService]] {
     graphQL(
       RootResolver(
         Queries(
+          () => ZIO.succeed(10),
           args => LogService.findLogs(args.first, args.size),
         ),
         Mutations(args => LogService.removeIndex(args.name).orDie),
