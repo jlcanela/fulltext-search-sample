@@ -9,13 +9,13 @@ https://com-lihaoyi.github.io/mill/mill/Intro_to_Mill.html#_installation
 
 To package the batch:
 ```
-mill batch.standalone.assembly
-mill batch.assembly
+./mill batch.standalone.assembly
+./mill batch.assembly
 ```
 
 To run the program:
 ```
-mill data.run
+./mill runner.run
 ```
 
 

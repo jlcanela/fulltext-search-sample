@@ -10,10 +10,10 @@ object Deps {
   val SPARK_VERSION = "3.1.2"
   val ELASTICSEARCH_VERSION = "7.15.0"
   val ZIO_V1 = "1.0.9"
-  val ZIO_V2 = "2.0.0-M4"
+  val ZIO_V2 = "2.0.0-M6-2"
 }
 
-object spark extends ScalaModule { outer =>
+object batch extends ScalaModule { outer =>
 
   import Deps._ 
 

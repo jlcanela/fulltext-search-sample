@@ -1,0 +1,24 @@
+@startuml batch-processing
+
+start
+if (no log?) then (true)
+:Download logs;
+if (success?) then (true)
+else (false)
+:Log "no log" error;
+stop
+endif
+else (false)
+endif
+:Clean logs data;
+:Create new Index;
+:Import logs into new Index;
+if (success?) then (true)
+:Update index alias;
+:Remove previous index;
+else (no)
+:Remove bad index;
+endif
+stop
+
+@enduml

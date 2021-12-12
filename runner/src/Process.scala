@@ -1,17 +1,18 @@
 import zio._
-import java.nio.file.Files
-//import java.nio.path.Paths
 import zio.internal.Blocking
+import java.nio.file.Files
 import java.nio.file.Paths
-import java.net.URI
 import java.nio.file.Path
+import java.net.URI
 
 trait Process {
-  def runBatch(path: String): ZIO[Has[Console], Throwable, (Boolean, Boolean, Boolean)]
+  def runBatch(path: String): ZIO[Any, Throwable, (Boolean, Boolean, Boolean)]
 }
 
-object Process {
-    def runBatch(path: String): ZIO[Has[Process] with Has[Console], Throwable, (Boolean, Boolean, Boolean)] = ZIO.serviceWith(_.runBatch(path))
+object Process extends Accessible[Process] {
+    def runBatch(path: String) = this.apply(_.runBatch(path))
+
+     val live = (ProcessLive.apply _).toLayer
 }
 
 case class ProcessLive(console: Console, clock: Clock) extends Process {
@@ -28,16 +29,11 @@ case class ProcessLive(console: Console, clock: Clock) extends Process {
       val cmd = os.Shellable.ArrayShellable(params)
       ZIO.attempt(os.proc(cmd).spawn(cwd=os.pwd).join())
     }
-    //def runSpark(params: String*) = Console.printLine((List("spark-submit", "--class", "SparkCli", s"${os.pwd}/out/spark/assembly/dest/out.jar") ++ params).mkString(" "))
 
-    override def runBatch(path: String): ZIO[Has[Console], Throwable, (Boolean, Boolean, Boolean)] = for {
+    override def runBatch(path: String): ZIO[Any, Throwable, (Boolean, Boolean, Boolean)] = for {
       (file, fetched) <- fetchFile(path)
       batchSuccess <- runSpark("batch", "access.log.gz", "data/cleaned")
       indexSuccess <- runSpark("index", "data/cleaned")
       reportSuccess <- runSpark("report", "data/cleaned", "data/report")
     } yield (batchSuccess, indexSuccess, reportSuccess)
-}
-
-object ProcessLive {
-    val layer: URLayer[Has[Console] with Has[Clock], Has[Process]] = (ProcessLive(_, _)).toLayer[Process]
 }
