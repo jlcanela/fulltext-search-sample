@@ -23,9 +23,10 @@ To run the program:
 
 https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html#docker-cli-run-prod-mode
 
-Check elasticsearch is up and running: 
+Check elasticsearch is up and running:
 ```
 curl -X GET "localhost:9200/_cat/nodes?v=true&pretty"
+curl -X GET "localhost:9200/_cat/indices?v=true&pretty"
 ```
  
 Stop cluster and clean volumes:
