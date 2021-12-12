@@ -12,7 +12,7 @@ command line tool
 - spark: data processing library 
 
 spark
-- documentation: https://spark.apache.org/
+- documentation: https://spark.apache.org/
 - spark-submit
 - sigmod 2015 paper http://people.csail.mit.edu/matei/papers/2015/sigmod_spark_sql.pdf
 - spark UI
@@ -37,8 +37,8 @@ test / QA
 - https://softwaretestingfundamentals.com/
 
 data culture
-- history of time : https://www.joda.org/joda-time/
-- character encoding : http://www.i18nqa.com/debug/bug-utf-8-latin1.html
+- history of time : https://www.joda.org/joda-time/
+- character encoding : http://www.i18nqa.com/debug/bug-utf-8-latin1.html
 - let’s dig about time https://www.kaggle.com/olistbr/brazilian-ecommerce
 
 elastic search
@@ -82,7 +82,7 @@ java
 build / make
 - mill / sbt (scala)
   - how to build a jar file
-    mill spark.jar => simple jar : only the compiled classes
+    mill spark.jar => simple jar : only the compiled classes
     mill spark.assembly => assembly jar compiled classes with ivy/maven dependencies
     mill spark.standalone.run    standalone jar contains everything including spark dependencies
 
@@ -97,7 +97,7 @@ build / make
 gpdr
 - regulation https://ec.europa.eu/info/law/law-topic/data-protection/data-protection-eu_en#fundamental-rights
 - https://gdpr.eu/checklist/
-- exercise : exemple of data processing you know
+- exercise: exemple of data processing you know
 
 storage of data
 - csv file

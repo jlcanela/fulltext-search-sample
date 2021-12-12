@@ -7,6 +7,7 @@ import com.sksamuel.elastic4s.requests.searches.SearchHit
 import zio.console
 import zio.console.Console
 import zio.stream.ZSink
+import zio.query._
 import com.sksamuel.elastic4s.RequestFailure
 
 case class ElasticError(err: RequestFailure) extends Exception
