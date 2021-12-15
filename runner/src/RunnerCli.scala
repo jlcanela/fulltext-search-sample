@@ -9,7 +9,7 @@ object RunnerCli extends ZIOAppDefault {
 
    // override def run: ZIO[Environment with ZEnv with Has[ZIOAppArgs],Any,Any] =
         
-     def run = job.inject(Process.live, ZEnv.live)
+     def run = job.provide(Process.live, ZEnv.live)
 
     def job = for {
      (batchSuccess, indexSuccess, reportSuccess) <- Process.runBatch("https://github.com/jlcanela/spark-hands-on/raw/master/almhuette-raith.log/access.log.gz")

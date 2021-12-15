@@ -1,15 +1,7 @@
 import zio._
 import org.apache.spark.sql.SparkSession
 
-object SparkCli extends ZIOApp {
-
-    import org.apache.log4j.Logger
-
-    type Environment = ZEnv
-
-    val tag = Tag[Environment]
-
-    override def layer: ZLayer[Has[ZIOAppArgs],Any,Environment] = ZLayer.wire[Environment](ZEnv.live)
+object SparkCli extends ZIOAppDefault {
 
     def run(command: Array[String]) = command match {
         case Array("batch", in, out) => SparkBatch.run((spark: SparkSession) => SparkBatch.clean(spark, in, out))
@@ -20,7 +12,7 @@ object SparkCli extends ZIOApp {
         case Array("stream", "KafkaDirectStreamPageviews") => stream.KafkaDirectStreamPageviews.main(Array())
         case _ => println(s"command '$command' not recognized (batch|index)")
     }
-    override def run: ZIO[Environment with ZEnv with Has[ZIOAppArgs],Any,Any] = for {
+    override def run = for {
      args <- getArgs if args.length > 0
      _ <- ZIO.attempt(run(args.toArray))
      _ <- Console.printLine(s"finished")
