@@ -37,10 +37,10 @@
 <body>
 <div style="width:700px;float:left;">
     <div class="grid-header" style="width:100%">
-        <label>Web Log Search</label>
+        <label>Web Log Search</label> (<span id="itemcount">0</span>)
         <span style="float:right;display:inline-block;">
           Search:
-          <input type="text" id="txtSearch" value="switch">
+          <input type="text" id="txtSearch" value="">
         </span>
     </div>
     <div id="myGrid" style="width:100%;height:600px;"></div>
@@ -99,6 +99,7 @@
             var vp = grid.getViewport();
             loader.ensureData(vp.top, vp.bottom);
         });
+
         /*loader.onDataLoading.subscribe(function () {
             if (!loadingIndicator) {
                 loadingIndicator = $("<span class='loading-indicator'><label>Loading...</label></span>").appendTo(document.body);
@@ -115,18 +116,26 @@
                 grid.invalidateRow(i);
             }
             grid.updateRowCount();
+
+            itemcount = loader.data.length
+            maxcount = loader.data.recordsCount
+            $("#itemcount").text(`visible items: ${itemcount}, total count ${maxcount}`)
             grid.render();
            // loadingIndicator.fadeOut();
         });
-        /*$("#txtSearch").keyup(function (e) {
-            if (e.which == 13) {
-                loader.setSearch($(this).val());
-                var vp = grid.getViewport();
-                loader.ensureData(vp.top, vp.bottom);
+        $("#txtSearch").keyup(function (e) {
+            const v = $(this).val()
+            if (v.length > 2) {
+                loader.setSearch(v);
+            } else {
+                loader.setSearch("")
             }
-        });*/
-        /*loader.setSearch($("#txtSearch").val());
-        loader.setSort("score", -1);
+            var vp = grid.getViewport();
+            grid.gotoCell(0, 0);
+            loader.ensureData(vp.top, vp.bottom);
+        });
+        loader.setSearch($("#txtSearch").val());
+        /*loader.setSort("score", -1);
         grid.setSortColumn("score", false);*/
         // load the first page
         grid.onViewportChanged.notify();

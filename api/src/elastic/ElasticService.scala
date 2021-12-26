@@ -5,6 +5,7 @@ import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.requests.searches.SearchHit
+import com.sksamuel.elastic4s.requests.searches.queries.{Query => ESQuery}
 
 import org.elasticsearch.client.RestClient
 import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback
@@ -28,7 +29,7 @@ object ElasticService {
 
     trait ElasticService {
         def search(req: SearchRequest): Task[Either[RequestFailure, SearchResult]]
-        def count: Task[Either[RequestFailure, Long]]
+        def count(req: ESQuery): Task[Either[RequestFailure, Long]]
         def removeIndex(name: String): Task[Boolean]
     }
 
@@ -62,14 +63,14 @@ case class ElasticLive() extends ElasticService.ElasticService {
     import com.sksamuel.elastic4s.Indexes
 
 
-    val countLimit = 10000
+    //val countLimit = 10000
     
-    def count: ZIO[Any, Throwable, Either[RequestFailure, Long]] = connect { client =>
+    def count(req: ESQuery): ZIO[Any, Throwable, Either[RequestFailure, Long]] = connect { client =>
         for {
-            res <- client.execute(ElasticDsl.count(Indexes("web")))
+            res <- client.execute(ElasticDsl.count(Indexes("web")).query(req))
             c <- res match {
                 case failure: RequestFailure => ZIO.succeed(Left(failure)) 
-                case results: RequestSuccess[CountResponse] => ZIO.succeed(Right(Math.min(results.result.count, countLimit)))  
+                case results: RequestSuccess[CountResponse] => ZIO.succeed(Right(results.result.count))  
             }
         } yield c
     }

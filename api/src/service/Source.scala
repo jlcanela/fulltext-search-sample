@@ -9,7 +9,7 @@ case class GetResult(offset: Long, size: Long) extends ES_Search
 object Source {
 
   def exec(req: ES_Search): ZIO[Has[LogService.LogService], Throwable, List[Log]] = req match {
-    case GetResult(offset, size) => LogService.findLogs(offset.toInt, size.toInt)
+    case GetResult(offset, size) => LogService.findLogs(offset.toInt, size.toInt, None)
     //case GetCountResult(offset, size) => Search.find(offset, size)
     //case GetCount => Search.find(10, 2)
   }

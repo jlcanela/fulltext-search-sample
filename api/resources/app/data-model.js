@@ -18,7 +18,6 @@
       var onDataLoading = new Slick.Event();
       var onDataLoaded = new Slick.Event();
   
-  
       function init() {
       }
   
@@ -43,7 +42,6 @@
   
   
       function ensureData(from, to) {
-        console.log(`ensure data ${from} ${to}`)
         if (req) {
           //req.abort();
           for (var i = req.fromPage; i <= req.toPage; i++)
@@ -69,9 +67,6 @@
   
         if (fromPage > toPage || ((fromPage == toPage) && data[fromPage * PAGESIZE] !== undefined)) {
           // TODO:  look-ahead
-          console.log(`notify look ahead ${fromPage} - ${toPage} / ${data[fromPage * PAGESIZE]}`)
-          //onDataLoaded.notify({from: from, to: to});
-          //return;
         }
   
         var url = "http://localhost:8888/api/q=" + searchstr + "&start=" + (fromPage * PAGESIZE) + "&limit=" + (((toPage - fromPage) * PAGESIZE) + PAGESIZE);
@@ -87,12 +82,17 @@
         h_request = setTimeout(function () {
           for (var i = fromPage; i <= toPage; i++)
             data[i * PAGESIZE] = null; // null indicates a 'requested but not available yet'
-          console.log("notify loading")
+
           onDataLoading.notify({from: from, to: to});
   
           req = {
             fromPage,
             toPage
+          }
+
+          searchParam = ""
+          if (searchstr.length > 2) {
+            searchParam = `, search: ${JSON.stringify(searchstr.replaceAll('"', "").replaceAll("\\",""))}`
           }
 
           fetch('http://localhost:8088/api/graphql', {
@@ -103,57 +103,24 @@
             body: JSON.stringify({
               query: `
                 query {
-                  logs(first: ${from}, size: ${to-from+1}) {
+                  logs(first: ${from}, size: ${to - from + 1}${searchParam}) {
                       datetime ip uri 
                   }  
-                  logsCount
+                  logsCount(${searchParam})
                 }              
                 `,
-              variables: {
-              //  now: new Date().toISOString(),
-              },
+              variables: {},
             }),
           })
-          .then((res) => res.json())
-          .then((res) => onSuccess({
+            .then((res) => res.json())
+            .then((res) => onSuccess({
               request: {
                 start: from
               },
               results: res
             }))
-          .then((result) => console.log(result));
-          
-          /*setTimeout(() => {
-            console.log("logging")
-            var results = []
-            for (i = from; i < to; i++) {
-              results[i] = { item: { index: i, name: "named", "mpn": "A", "brand": { "name": "brandy_" + i }, "short_description": "desc" } };
-            }
-            var resp = {
-              request: {
-                start: 0,
-              },
-              results: results,
-              hits: "1000000",
-              fromPage: 1
-            };
-            console.log(resp);
-            console.log("length:" + resp.length)
-            console.log("date before:")
-            console.log(Date.now())
-            onSuccess(resp);
-            console.log("date end:")
-            console.log(Date.now())
-          }, 0)*/
-          /*req = $.jsonp({
-            url: url,
-            callbackParameter: "callback",
-            cache: true,
-            success: onSuccess,
-            error: function () {
-              onError(fromPage, toPage);
-            }
-          });*/
+            .catch((e) => onError(fromPage, toPage));
+      
           req.fromPage = fromPage;
           req.toPage = toPage;
         }, 50);
@@ -166,20 +133,15 @@
   
       function onSuccess(resp) {
         
-        console.log("onsuccess start:", resp)
         start = Date.now()
         
         var from = resp.request.start, to = from + resp.results.data.logs.length;
-        //data.length = Math.min(parseInt(resp.hits),1000); // limitation of the API
-        length = parseInt(resp.hits)
-        console.log(`data length = ${length}`)
-        data.length = resp.results.data.logsCount;
+        data.recordsCount = resp.results.data.logsCount
+        data.length = Math.min(data.recordsCount, 10000) // limitation of ES API 
         logs = resp.results.data.logs;
 
         for (var i = 0; i < logs.length; i++) {
           if (logs[i]) {
-           // var item = resp.results[i].item;
-            
             data[from + i] = logs[i];
             data[from + i].index = from + i;
           }
@@ -187,13 +149,8 @@
         }
         
         req = null;
-        
-        console.log("onsuccess middle:")
-        console.log(Date.now() - start)
-        onDataLoaded.notify({ from: from, to: to });
 
-        console.log("onsuccess end:")
-        console.log(Date.now() - start)
+        onDataLoaded.notify({ from: from, to: to });     
       }
   
   

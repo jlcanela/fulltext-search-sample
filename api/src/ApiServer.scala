@@ -31,12 +31,9 @@ object ApiServer extends App {
 
   def startServer = for {
     logService <- ZIO.service[LogService.LogService]
-    queries <- ZIO.succeed(Queries(
-          logService.countLogs,
-          args => logService.findLogs(args.first, args.size),
-        //  args => ZQuery.fromRequest(GetResult2(args.first, args.size))(Source.BatchedSearchDataSource)
-            //ZQuery.fromEffect(LogService.findLogs(args.first, args.size)),
-        ))
+    logSearch = (args: LogSearchArgs) => logService.findLogs(args.first, args.size, args.search)
+    logCount = (args: LogCountArgs) => logService.countLogs(args.search)
+    queries <- ZIO.succeed(Queries(logCount, logSearch))
     interpreter <- LogApi.api(queries).interpreter
     _ <- Server
       .start(

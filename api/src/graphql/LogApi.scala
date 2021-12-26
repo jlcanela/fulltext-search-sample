@@ -23,11 +23,12 @@ import model.Log
 import caliban.schema.Schema
 
 case class RemoveIndexArgs(name: String)
-case class LogArgs(first: Int, size: Int)
+case class LogSearchArgs(first: Int, size: Int, search: Option[String])
+case class LogCountArgs(search: Option[String])
 
 case class Queries(
-  logsCount: Task[Long],
-  logs: LogArgs => Task[List[Log]],
+  logsCount: LogCountArgs => Task[Long],
+  logs: LogSearchArgs => Task[List[Log]],
 )
 case class Mutations(removeIndex: RemoveIndexArgs => URIO[Has[LogService], Boolean])
 case class Subscriptions(calls: String => ZStream[Has[LogService], Nothing, String])
@@ -37,23 +38,9 @@ object LogApi extends GenericSchema[Has[LogService]] {
   implicit val deleteIndexArgsSchema = gen[RemoveIndexArgs]
   implicit val mutationSchema = gen[Mutations]
 
-  implicit val logArgsSchema  = Schema.gen[LogArgs]
+  implicit val logSearchArgsSchema  = Schema.gen[LogSearchArgs]
+  implicit val logCountArgsSchema  = Schema.gen[LogCountArgs]
   implicit val esSearchSchema  = Schema.gen[ES_Search]
-  
-  //implicit val characterSchema = Schema.gen[Any, Character]
-
-  def getLogsCount(args: LogArgs): ZIO[Has[LogService.LogService], Throwable, Int] = for {
-    logs <- LogService.findLogs(args.first, args.size)
-  } yield logs.size
-
-  def dummyLogsCount(args: LogArgs) = ZIO.succeed(1000000)
-  def genLogs(args: LogArgs): List[Log] = List.tabulate(args.size)(x => Log.fromInt(x+args.first))
-  def dummyLogs(args: LogArgs) = ZIO.succeed(genLogs(args))
-
-  def getLogs(args: LogArgs): ZIO[Has[LogService.LogService], Throwable, List[Log]] = for {
-    logs <- LogService.findLogs(args.first, args.size)
-  } yield logs
-
   implicit val queriesSchema: Schema[Any, Queries] = Schema.gen[Queries]
 
   def api(queries: Queries) : GraphQL[Console with Clock with Has[LogService]] = 
