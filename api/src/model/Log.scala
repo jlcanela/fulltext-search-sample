@@ -5,6 +5,7 @@ case class Log(ip: String, ident: String, user: String, datetime: String, status
 object Log {
 
     val default = Log("ip", "ident", "user", "datetime", "status", "size", "referer", "userAgent", "unk", "method", "uri", "http")
+    def fromInt(i: Int) =  Log(s"ip_$i", "ident", "user", s"datetime_$i", "status", "size", "referer", "userAgent", "unk", "method", "uri", "http")
     
     val fields = Array("ip", "ident", "user", "datetime", "status", "size", "referer", "userAgent", "unk", "method", "uri", "http")
 

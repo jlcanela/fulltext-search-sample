@@ -26,7 +26,7 @@ case class RemoveIndexArgs(name: String)
 case class LogArgs(first: Int, size: Int)
 
 case class Queries(
-  logsCount: LogArgs => Task[Int],
+  logsCount: Task[Long],
   logs: LogArgs => Task[List[Log]],
 )
 case class Mutations(removeIndex: RemoveIndexArgs => URIO[Has[LogService], Boolean])
@@ -46,8 +46,9 @@ object LogApi extends GenericSchema[Has[LogService]] {
     logs <- LogService.findLogs(args.first, args.size)
   } yield logs.size
 
-  def dummyLogsCount(args: LogArgs) = ZIO.succeed(1)
-  def dummyLogs(args: LogArgs) = ZIO.succeed(List(Log.default))
+  def dummyLogsCount(args: LogArgs) = ZIO.succeed(1000000)
+  def genLogs(args: LogArgs): List[Log] = List.tabulate(args.size)(x => Log.fromInt(x+args.first))
+  def dummyLogs(args: LogArgs) = ZIO.succeed(genLogs(args))
 
   def getLogs(args: LogArgs): ZIO[Has[LogService.LogService], Throwable, List[Log]] = for {
     logs <- LogService.findLogs(args.first, args.size)
@@ -55,15 +56,10 @@ object LogApi extends GenericSchema[Has[LogService]] {
 
   implicit val queriesSchema: Schema[Any, Queries] = Schema.gen[Queries]
 
-  val api = //: GraphQL[Console with Clock with Has[LogService]] =
+  def api(queries: Queries) : GraphQL[Console with Clock with Has[LogService]] = 
     graphQL(
       RootResolver(
-        Queries(
-          dummyLogsCount _,
-          dummyLogs _,
-        //  args => ZQuery.fromRequest(GetResult2(args.first, args.size))(Source.BatchedSearchDataSource)
-            //ZQuery.fromEffect(LogService.findLogs(args.first, args.size)),
-        ),
+        queries,
         //Mutations(args => LogService.removeIndex(args.name).orDie)
        // Subscriptions(String => LogService.calls)
       )

@@ -18,12 +18,16 @@ object LogService {
 
   trait LogService {
     def findLogs(from: Int, size: Int): ZIO[Any, Throwable, List[Log]]
+    def countLogs: ZIO[Any, Throwable, Long]
     def removeIndex(name: String): UIO[Boolean]
     def calls: ZStream[Any, Nothing, String]
   }
 
   def findLogs(from: Int, size: Int): ZIO[Has[LogService], Throwable, List[Log]] =
     ZIO.serviceWith(_.findLogs(from, size))
+
+  def countLogs: ZIO[Has[LogService], Throwable, Long] = 
+    ZIO.serviceWith(_.countLogs)
 
   def removeIndex(name: String): ZIO[Has[LogService], Throwable, Boolean] =
     ZIO.serviceWith(_.removeIndex(name))
@@ -51,10 +55,12 @@ case class LogLive(
     .unwrapManaged(subscribers.subscribe.map(ZStream.fromQueue(_)))
     .run(ZSink.foreach(x => console.putStrLn(x)))
 
-  def absolved(
-      x: Either[RequestFailure, SearchResult]
-  ): Either[Throwable, SearchResult] =
-    x.fold(err => Left(ElasticError(err)), x => Right(x))
+  def absolved[T](
+      x: Either[RequestFailure, T]
+  ): Either[Throwable, T] =
+    x.fold(err => {
+      println(err.toString())
+    Left(ElasticError(err))}, x => Right(x))
 
   def logs(
       from: Int,
@@ -63,7 +69,7 @@ case class LogLive(
     elastic
       .search {
         search("web")
-          .query(must(matchAllQuery()).filter(termQuery("uri", "php")))
+          .query(must(matchAllQuery()))//.filter(termQuery("uri", "php")))
           .from(from)
           .size(size)
           .sortByFieldAsc("datetime")
@@ -78,7 +84,10 @@ case class LogLive(
       .map(_.sourceAsMap)
       .map(Log.fromMap _)
   )
- 
+
+  def countLogs: ZIO[Any,Throwable,Long] = ZIO.absolve(
+    elastic.count.map(x => absolved(x))
+    )  
   def removeIndex(name: String) =
     subscribers.publish(s"removeIndex $name") 
     // elastic.removeIndex(name).orDie

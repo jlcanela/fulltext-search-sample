@@ -20,6 +20,7 @@ import org.apache.http.auth.AuthScope
 
 import com.sksamuel.elastic4s.requests.searches.SearchRequest
 import com.sksamuel.elastic4s.zio.instances._
+import com.sksamuel.elastic4s.requests.count.CountResponse
 
 case class SearchResult(count: Long, hits: Array[SearchHit])
 
@@ -27,6 +28,7 @@ object ElasticService {
 
     trait ElasticService {
         def search(req: SearchRequest): Task[Either[RequestFailure, SearchResult]]
+        def count: Task[Either[RequestFailure, Long]]
         def removeIndex(name: String): Task[Boolean]
     }
 
@@ -56,6 +58,21 @@ case class ElasticLive() extends ElasticService.ElasticService {
         } yield hits
     }
 
+    import com.sksamuel.elastic4s.ElasticDsl._
+    import com.sksamuel.elastic4s.Indexes
+
+
+    val countLimit = 10000
+    
+    def count: ZIO[Any, Throwable, Either[RequestFailure, Long]] = connect { client =>
+        for {
+            res <- client.execute(ElasticDsl.count(Indexes("web")))
+            c <- res match {
+                case failure: RequestFailure => ZIO.succeed(Left(failure)) 
+                case results: RequestSuccess[CountResponse] => ZIO.succeed(Right(Math.min(results.result.count, countLimit)))  
+            }
+        } yield c
+    }
     def removeIndex(index: String): Task[Boolean] = connect { client => for {
             _ <- client.execute {
                 deleteIndex(index)

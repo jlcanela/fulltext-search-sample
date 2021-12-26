@@ -3,15 +3,21 @@ import zio.stream._
 import zhttp.http._
 import zhttp.service.Server
 import caliban.ZHttpAdapter
+import java.nio.file.Paths
 
 object ApiServer extends App {
-  private val graphiql = Http.succeed(
+  private val graphiql = Http.fromEffect(ZIO.succeed(
     Response.http(content =
       HttpData.fromStream(ZStream.fromResource("graphiql.html"))
     )
-  )
+  ))
+  private val data1 = Http.fromEffect(ZIO.succeed(
+    Response.http(content =
+      HttpData.fromStream(ZStream.fromFile(Paths.get("api", "resources", "data1.json")))
+    )
+  ))
 
-  private def app(resource: String) = Http.succeed(
+ private def app(resource: String) = Http.succeed(
     Response.http(content =
       HttpData.fromStream(ZStream.fromResource(s"app/$resource"))
     )
@@ -24,18 +30,28 @@ object ApiServer extends App {
     (ZEnv.live >+> ElasticService.make >+> LogService.make).orDie
 
   def startServer = for {
-    interpreter <- LogApi.api.interpreter
+    logService <- ZIO.service[LogService.LogService]
+    queries <- ZIO.succeed(Queries(
+          logService.countLogs,
+          args => logService.findLogs(args.first, args.size),
+        //  args => ZQuery.fromRequest(GetResult2(args.first, args.size))(Source.BatchedSearchDataSource)
+            //ZQuery.fromEffect(LogService.findLogs(args.first, args.size)),
+        ))
+    interpreter <- LogApi.api(queries).interpreter
     _ <- Server
       .start(
         8088,
+        CORS(
         Http.route {
           case _ -> Root / "api" / "graphql" =>
             ZHttpAdapter.makeHttpService(interpreter)
           case _ -> Root / "ws" / "graphql" =>
             ZHttpAdapter.makeWebSocketService(interpreter)
           case _ -> Root / "graphiql" => graphiql
+          case _ -> Root / "data" => data1
           case _ -> Root / "app" / resource => app(resource)
-        }
+        },
+        config = CORSConfig(anyOrigin = true))
       ).forever
   } yield ()
 
