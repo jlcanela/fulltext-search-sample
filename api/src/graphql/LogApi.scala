@@ -7,43 +7,43 @@ import caliban.wrappers.ApolloTracing.apolloTracing
 import caliban.wrappers.Wrappers._
 
 import zio._
-import zio.{Has, URIO, ZIO}
-import zio.clock.Clock
-import zio.console.Console
-import zio.duration._
-import zio.stream.ZStream
+import zio.stream._
 
 import zio.query._
 
 import scala.language.postfixOps
 
-import LogService.LogService
-import ElasticService.ElasticService
 import model.Log
 import caliban.schema.Schema
+import com.sksamuel.elastic4s
 
 case class RemoveIndexArgs(name: String)
 case class LogSearchArgs(first: Int, size: Int, search: Option[String])
 case class LogCountArgs(search: Option[String])
 
 case class Queries(
-  logsCount: LogCountArgs => Task[Long],
-  logs: LogSearchArgs => Task[List[Log]],
+  logsCount: LogCountArgs => ZIO[Any, Throwable,Long],
+  logs: LogSearchArgs => ZIO[Any, Throwable,List[Log]],
 )
-case class Mutations(removeIndex: RemoveIndexArgs => URIO[Has[LogService], Boolean])
-case class Subscriptions(calls: String => ZStream[Has[LogService], Nothing, String])
+case class Mutations(removeIndex: RemoveIndexArgs => URIO[LogService, Boolean])
+case class Subscriptions(calls: String => ZStream[LogService, Nothing, String])
 
-object LogApi extends GenericSchema[Has[LogService]] {
+object LogApi extends GenericSchema[LogService] {
 
-  implicit val deleteIndexArgsSchema = gen[RemoveIndexArgs]
-  implicit val mutationSchema = gen[Mutations]
+  implicit val deleteIndexArgsSchema: Schema[Any, RemoveIndexArgs] = Schema.gen
+  //implicit val deleteIndexArgsSchema = Schema.genMacro[RemoveIndexArgs].schema
+  
+  //implicit val mutationSchema = Schema.genMacro[Mutations].schema
+  //implicit val mutationSchema = gen[Any, Mutations]
 
-  implicit val logSearchArgsSchema  = Schema.gen[LogSearchArgs]
-  implicit val logCountArgsSchema  = Schema.gen[LogCountArgs]
-  implicit val esSearchSchema  = Schema.gen[ES_Search]
-  implicit val queriesSchema: Schema[Any, Queries] = Schema.gen[Queries]
+  implicit val logSearchArgsSchema: Schema[Any, LogSearchArgs] = Schema.gen
+  implicit val logCountArgsSchema: Schema[Any, LogCountArgs] = Schema.gen
+  implicit val esSearchSchema: Schema[Any, ES_Search] = Schema.gen
+ 
+  implicit val queriesSchema: Schema[Any, Queries] =
+    Schema.genMacro[Queries].schema
 
-  def api(queries: Queries) : GraphQL[Console with Clock with Has[LogService]] = 
+  def api(queries: Queries) : GraphQL[Console with Clock with LogService] = 
     graphQL(
       RootResolver(
         queries,

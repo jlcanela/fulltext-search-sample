@@ -18,6 +18,35 @@ To run the program:
 ./mill runner.run
 ```
 
+## Load Data and Search
+
+### Generate cleaned data
+
+```
+
+```
+
+### Start ElasticSearch
+
+```
+docker-compose up
+```
+
+### Index data
+
+Read the data/cleaned parquet file and index it in ElasticSearch:
+```
+./mill batch.standalone.run index data/cleaned
+```
+
+### Start API
+
+Start the API server:
+```
+./mill api.run start
+```
+
+Open application page: http://localhost:8088/app/index.html
 
 ## ElasticSearch troubleshooting
 

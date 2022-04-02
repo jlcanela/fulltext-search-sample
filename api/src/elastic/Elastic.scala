@@ -1,3 +1,5 @@
+package elastic
+
 import zio._
 
 import com.sksamuel.elastic4s._
@@ -21,10 +23,10 @@ import org.apache.http.auth.AuthScope
 import com.sksamuel.elastic4s.requests.searches.SearchRequest
 import com.sksamuel.elastic4s.zio.instances._
 
-case class ElasticConfig(elasticHost: String, elasticPort: Int, user: String, password: String, ssl: Boolean)
 
 object ElasticConfig {
-    def get = ElasticConfig(
+
+    def get = Elastic.ElasticConfig(
         elasticHost = "localhost",
         elasticPort = 9200,
         user = "elastic",
@@ -32,9 +34,33 @@ object ElasticConfig {
         ssl = false)
 }
 
-object Elastic {
+trait Elastic {
 
-     def createClient(config: ElasticConfig) = ZIO.effect {
+    def createClient(config: Elastic.ElasticConfig): ZIO[Any, Throwable, JavaClient]
+    
+    def connect: ZIO.Release[Any, Throwable, ElasticClient]
+}
+
+object Elastic {
+    
+    case class ElasticConfig(elasticHost: String, elasticPort: Int, user: String, password: String, ssl: Boolean)
+    
+    def createClient(config: Elastic.ElasticConfig) = ZIO.serviceWithZIO[Elastic](_.createClient(config))
+
+    def connect = ZIO.serviceWith[Elastic](_.connect)
+
+    val live = (ElasticLive.apply _).toLayer
+
+}
+
+case class ElasticLive(config: Elastic.ElasticConfig) extends Elastic {
+
+    def connect = ZIO.acquireReleaseWith { for {
+            client <- createClient(config)
+        } yield ElasticClient(client)
+    }(client => ZIO.effectTotal(client.close))
+
+     def createClient(config: Elastic.ElasticConfig) = ZIO.attempt {
         
         lazy val provider = {
             val provider = new BasicCredentialsProvider

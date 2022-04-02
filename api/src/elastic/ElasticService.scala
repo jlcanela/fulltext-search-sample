@@ -1,3 +1,5 @@
+package elastic 
+
 import zio._
 
 import com.sksamuel.elastic4s._
@@ -25,56 +27,60 @@ import com.sksamuel.elastic4s.requests.count.CountResponse
 
 case class SearchResult(count: Long, hits: Array[SearchHit])
 
-object ElasticService {
+trait ElasticService {
 
-    trait ElasticService {
-        def search(req: SearchRequest): Task[Either[RequestFailure, SearchResult]]
-        def count(req: ESQuery): Task[Either[RequestFailure, Long]]
-        def removeIndex(name: String): Task[Boolean]
-    }
-
-   // def search(req: SearchRequest) = ZIO.serv
-    def removeIndex(name: String): ZIO[Has[ElasticService.ElasticService], Throwable, Boolean] = ZIO.serviceWith(_.removeIndex(name))
-  
-    implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
-
-    def make: ZLayer[Any, Throwable, Has[ElasticService.ElasticService]] = ZLayer.fromEffect(ZIO.succeed(ElasticLive()))
+    def search(req: SearchRequest): ZIO[Any, Throwable, SearchResult]
+    def count(req: ESQuery): ZIO[Any, Throwable, Long]
+    def removeIndex(name: String): Task[Boolean]
 
 }
 
-case class ElasticLive() extends ElasticService.ElasticService {
+object ElasticService {
 
-    def connect = ZIO.bracket { for {
-            client <- Elastic.createClient(ElasticConfig.get)
-        } yield ElasticClient(client)
-    }(client => ZIO.effectTotal(client.close))
+    implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
-    def search(req: SearchRequest): ZIO[Any, Throwable, Either[RequestFailure, SearchResult]] = connect { client =>
-        for {
-            res <- client.execute(req)
-            hits <- res match {
-                case failure: RequestFailure => ZIO.succeed(Left(failure)) 
-                case results: RequestSuccess[SearchResponse] => ZIO.succeed(Right(SearchResult(results.result.hits.total.value, results.result.hits.hits)))  
-            }
-        } yield hits
+    trait ElasticError extends Exception
+    
+    object ElasticError {
+        final case class Error(error: Throwable) extends ElasticError
+        final case class Failure(failure: RequestFailure) extends ElasticError
+        def mapError(err: Either[RequestFailure, Throwable]) = err.fold(Failure(_), Error(_))
     }
 
+    def removeIndex(name: String) = ZIO.serviceWithZIO[ElasticService](_.removeIndex(name))
+  
+    val live = (ElasticServiceLive.apply _).toLayer
+
+}
+
+case class ElasticServiceLive(elastic: Elastic) extends ElasticService {
+    
     import com.sksamuel.elastic4s.ElasticDsl._
     import com.sksamuel.elastic4s.Indexes
 
+    def search(req: SearchRequest) = elastic.connect { client =>
+            for {
+                res <- client.execute(req)
+                hits <- res match {
+                    case failure: RequestFailure => ZIO.succeed(Left(failure)) 
+                    case results: RequestSuccess[SearchResponse] => ZIO.succeed(Right(SearchResult(results.result.hits.total.value, results.result.hits.hits)))  
+                }
+            } yield hits
+        }
+        .right.mapError(ElasticService.ElasticError.mapError(_))
 
-    //val countLimit = 10000
-    
-    def count(req: ESQuery): ZIO[Any, Throwable, Either[RequestFailure, Long]] = connect { client =>
+
+    def count(req: ESQuery) = elastic.connect { client =>
         for {
-            res <- client.execute(ElasticDsl.count(Indexes("web")).query(req))
-            c <- res match {
-                case failure: RequestFailure => ZIO.succeed(Left(failure)) 
-                case results: RequestSuccess[CountResponse] => ZIO.succeed(Right(results.result.count))  
-            }
+                res <- client.execute(ElasticDsl.count(Indexes("web")).query(req))
+                c <- res match {
+                    case failure: RequestFailure => ZIO.succeed(Left(failure)) 
+                    case results: RequestSuccess[CountResponse] => ZIO.succeed(Right(results.result.count))  
+                }
         } yield c
-    }
-    def removeIndex(index: String): Task[Boolean] = connect { client => for {
+    }.right.mapError(ElasticService.ElasticError.mapError(_))
+
+    def removeIndex(index: String): Task[Boolean] = elastic.connect { client => for {
             _ <- client.execute {
                 deleteIndex(index)
             }

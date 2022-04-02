@@ -10,7 +10,7 @@ object Deps {
   val SPARK_VERSION = "3.1.2"
   val ELASTICSEARCH_VERSION = "7.15.0"
   val ZIO_V1 = "1.0.9"
-  val ZIO_V2 = "2.0.0-RC1"
+  val ZIO_V2 = "2.0.0-RC2"
 }
 
 object batch extends ScalaModule { outer =>
@@ -90,12 +90,13 @@ object api extends ScalaModule {
   def scalaVersion = "2.13.6"
 
   def ivyDeps = Agg(
-    ivy"dev.zio::zio::${ZIO_V1}",
+    ivy"dev.zio::zio::${ZIO_V2}",
     ivy"com.sksamuel.elastic4s::elastic4s-client-esjava:${ELASTICSEARCH_VERSION}",
     ivy"com.google.guava:guava:31.0.1-jre",
     ivy"ch.qos.logback:logback-classic:1.2.6",
-    ivy"com.github.ghostdogpr::caliban:1.2.4",
-    ivy"com.github.ghostdogpr::caliban-zio-http:1.2.4",
+    ivy"com.github.ghostdogpr::caliban:2.0.0-RC2",
+    ivy"com.github.ghostdogpr::caliban-zio-http:2.0.0-RC2",
+    //ivy"io.d11::zhttp:2.0.0-RC5"
 //    ivy"com.github.ghostdogpr::caliban-http4s:1.2.4",
 //    ivy"org.http4s::http4s-server:0.23.6", 
 //    ivy"org.http4s::http4s-blaze-server:0.23.6", 
