@@ -21,7 +21,7 @@ import org.apache.http.auth.UsernamePasswordCredentials
 import org.apache.http.auth.AuthScope
 
 import com.sksamuel.elastic4s.requests.searches.SearchRequest
-import com.sksamuel.elastic4s.zio.instances._
+//import com.sksamuel.elastic4s.zio.instances._
 
 
 object ElasticConfig {
@@ -49,7 +49,7 @@ object Elastic {
 
     def connect = ZIO.serviceWith[Elastic](_.connect)
 
-    val live = (ElasticLive.apply _).toLayer
+    val live = ZLayer.fromFunction(ElasticLive.apply _)
 
 }
 
@@ -58,7 +58,7 @@ case class ElasticLive(config: Elastic.ElasticConfig) extends Elastic {
     def connect = ZIO.acquireReleaseWith { for {
             client <- createClient(config)
         } yield ElasticClient(client)
-    }(client => ZIO.effectTotal(client.close))
+    }(client => ZIO.attemptBlockingIO(client.close).ignore)
 
      def createClient(config: Elastic.ElasticConfig) = ZIO.attempt {
         

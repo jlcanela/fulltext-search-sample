@@ -13,17 +13,18 @@ object Log {
 
     def fromMap(map: Map[String, AnyRef]) = {
         Log.apply(
-            map("ip").toString(), 
-            map("ident").toString(), 
-            map("user").toString(), 
-            map("datetime").toString(), 
-            map("status").toString(), 
-            map("size").toString(), 
-            map("referer").toString(), 
-            map("userAgent").toString(), 
-            map("unk").toString(), 
-            map("method").toString(), 
-            map("uri").toString(), 
-            map("http").toString())
+            map.get("ip").map(_.toString()).getOrElse(""), 
+            map.get("ident").map(_.toString()).getOrElse(""), 
+            map.get("user").map(_.toString()).getOrElse(""), 
+            map.get("datetime").map(_.toString()).getOrElse(""), 
+            map.get("status").map(_.toString()).getOrElse(""), 
+            map.get("size").map(_.toString()).getOrElse(""), 
+            map.get("referer").map(_.toString()).getOrElse(""), 
+            map.get("userAgent").map(_.toString()).getOrElse(""), 
+            map.get("unk").map(_.toString()).getOrElse(""), 
+            map.get("method").map(_.toString()).getOrElse(""), 
+            map.get("uri").map(_.toString()).getOrElse(""), 
+            map.get("http").map(_.toString()).getOrElse("")
+        )
     }
 }

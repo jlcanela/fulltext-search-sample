@@ -43,7 +43,7 @@ object LogApi extends GenericSchema[LogService] {
   implicit val queriesSchema: Schema[Any, Queries] =
     Schema.genMacro[Queries].schema
 
-  def api(queries: Queries) : GraphQL[Console with Clock with LogService] = 
+  def api(queries: Queries) : GraphQL[LogService] = 
     graphQL(
       RootResolver(
         queries,

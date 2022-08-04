@@ -13,7 +13,7 @@ object SparkCli extends ZIOAppDefault {
         case _ => println(s"command '$command' not recognized (batch|index)")
     }
     override def run = for {
-     args <- getArgs if args.length > 0
+     args <- getArgs
      _ <- ZIO.attempt(run(args.toArray))
      _ <- Console.printLine(s"finished")
     } yield ()

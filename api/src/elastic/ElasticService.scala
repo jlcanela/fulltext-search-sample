@@ -49,7 +49,7 @@ object ElasticService {
 
     def removeIndex(name: String) = ZIO.serviceWithZIO[ElasticService](_.removeIndex(name))
   
-    val live = (ElasticServiceLive.apply _).toLayer
+    val live = ZLayer.fromFunction(ElasticServiceLive.apply _)
 
 }
 

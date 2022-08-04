@@ -1,8 +1,7 @@
 package com.sksamuel.elastic4s.zio.instances
 
-import com.sksamuel.elastic4s.{ElasticRequest, ElasticClient, Executor, Functor, HttpClient, HttpResponse}
-
-import zio.Task
+import zio.{Task, ZIO}
+import com.sksamuel.elastic4s.{ElasticRequest, Executor, Functor, HttpClient, HttpResponse}
 
 trait TaskInstances {
   implicit val taskFunctor: Functor[Task] = new Functor[Task] {
@@ -11,11 +10,8 @@ trait TaskInstances {
 
   implicit val taskExecutor: Executor[Task] = new Executor[Task] {
     override def exec(client: HttpClient, request: ElasticRequest): Task[HttpResponse] =
-      Task.effectAsyncM { cb =>
-        val clazz = client.getClass.getName
-        //val headers = Map("Authorization" -> "Basic ZWxhc3RpYzpzb21ldGhpbmdzZWNyZXQ=")
-        //val req = ElasticRequest(request.method, request.endpoint, request.params ++ headers, request.entity)
-        Task.effect(client.send(request, v => cb(Task.fromEither(v))))
+      ZIO.asyncZIO { cb =>
+        ZIO.attempt(client.send(request, v => cb(ZIO.fromEither(v))))
       }
   }
 }

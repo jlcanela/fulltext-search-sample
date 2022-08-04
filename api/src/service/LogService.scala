@@ -5,6 +5,8 @@ import zio.stream._
 
 import model.Log
 
+import zio.ZLayer
+
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.requests.searches.SearchHit
 import com.sksamuel.elastic4s.requests.searches.queries.{Query => ESQuery}
@@ -34,13 +36,11 @@ object LogService {
 
 //  def calls =  ZStream.accessStream(_.get.calls)
 
-  val live = (LogLive.apply _).toLayer
+  val live = ZLayer.fromFunction(LogLive.apply _)
 
 }
 
 case class LogLive(
-    console: Console,
-   // subscribers: Hub[String],
     elastic: ElasticService
 ) extends LogService {
 
@@ -64,15 +64,15 @@ case class LogLive(
         // sourceInclude("gps", "populat*") sourceExclude("denonymn", "capit*")
       }
 
-  def findLogs(from: Int, size: Int, txt: Option[String]) = (for {
+  def findLogs(from: Int, size: Int, txt: Option[String]) = for {
     searchResult <- logs(from, size, txt)
     //_ <- subscribers.publish("findLogs")
   } yield  searchResult.hits.toList
       .map(_.sourceAsMap)
       .map(Log.fromMap _)
-  )
 
   def countLogs(txt: Option[String]) = elastic.count(searchOption(txt))
+  
   def removeIndex(name: String) = ZIO.unit.as(false)
 
 }

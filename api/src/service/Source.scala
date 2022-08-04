@@ -1,5 +1,6 @@
 import zio._
 import zio.query._
+
 import model.Log
 
 
@@ -21,10 +22,9 @@ object Source {
     } yield res
   
   def toKey(r: List[Log]): ES_Search = {
-    println("toKey:", r.toString())
     GetResult(10, 2)
   } 
 
   lazy val BatchedSearchDataSource: DataSource[LogService with Console, ES_Search] =
-    DataSource.fromFunctionBatchedWithM("searchB")(execChunk _, toKey _)
+    DataSource.fromFunctionBatchedWithZIO("searchB")(execChunk _, toKey _)
 }
