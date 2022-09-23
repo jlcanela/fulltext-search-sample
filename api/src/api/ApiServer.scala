@@ -1,3 +1,7 @@
+package api
+
+import service._
+
 import zio._
 import zio.stream._
 import zhttp.http._
@@ -8,7 +12,6 @@ import com.sksamuel.elastic4s.HttpResponse
 import caliban.GraphQLInterpreter
 import caliban.CalibanError
 
-import elastic._ 
 
 object ApiServer extends ZIOAppDefault {
 
@@ -31,7 +34,7 @@ object ApiServer extends ZIOAppDefault {
       )
               
   def startServer = for {
-    logService <- ZIO.service[LogService]
+    logService <- ZIO.service[Log]
     logSearch = (args: LogSearchArgs) => logService.findLogs(args.first, args.size, args.search)
     logCount = (args: LogCountArgs) => logService.countLogs(args.search)
     queries <- ZIO.succeed(Queries(logCount, logSearch))
@@ -48,22 +51,28 @@ object ApiServer extends ZIOAppDefault {
     ).forever
   } yield ()
     
-  def cleanIndex: ZIO[ElasticService, Throwable, ExitCode] =  for {
-    _ <- ElasticService.removeIndex("logs")
+  def cleanIndex: ZIO[Elastic, Throwable, ExitCode] =  for {
+    _ <- Elastic.removeIndex("logs")
   } yield ExitCode(0)
     
-  val fullLayer: ZLayer[Any, Nothing, ElasticService & LogService] = 
-    ZLayer.make[ElasticService & LogService](
-      ElasticService.live, 
+  val fullLayer: ZLayer[Any, Nothing, Elastic & Log] = 
+    ZLayer.make[Elastic & Log](
+      ElasticBase.live, 
       Elastic.live, 
-      LogService.live,
+      Log.live,
       ZLayer.succeed(ElasticConfig.get)      
     )
+
+    def pingElastic = for {
+      logService <- ZIO.service[Log]
+      _ <- logService.findLogs(1, 1000, None)
+      _     <- ZIO.log("ES LogInfo mapping preloaded")
+    } yield ()
 
     def run = for {
       args <- getArgs
       _    <- args match {
-                case Chunk("start") => startServer.provide(fullLayer)
+                case Chunk("start") => (startServer zipPar pingElastic).provide(fullLayer)
                 case Chunk("clean-index") => cleanIndex.provide(fullLayer)
                 case _ => for { 
                     _ <- Console.printLine(s"Command '${args.mkString(" ")}' not recognized").orDie

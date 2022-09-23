@@ -1,9 +1,9 @@
-import elastic._ 
+package service
 
 import zio.{Hub, Console, UIO, ZIO}
 import zio.stream._
 
-import model.Log
+//import domain.Log
 
 import zio.ZLayer
 
@@ -14,25 +14,25 @@ import com.sksamuel.elastic4s.RequestFailure
 
 case class ElasticError(err: RequestFailure) extends Exception
 
-case class LogResult(count: Long, logs: List[Log])
+case class LogResult(count: Long, logs: List[domain.Log])
 
-trait LogService {
-  def findLogs(from: Int, size: Int, search: Option[String]): ZIO[Any, Throwable, List[Log]]
+trait Log {
+  def findLogs(from: Int, size: Int, search: Option[String]): ZIO[Any, Throwable, List[domain.Log]]
   def countLogs(search: Option[String]): ZIO[Any, Throwable, Long]
   def removeIndex(name: String): UIO[Boolean]
   // def calls: ZStream[Any, Nothing, String]
 }
 
-object LogService {
+object Log {
 
   def findLogs(from: Int, size: Int, search: Option[String]) =
-    ZIO.serviceWithZIO[LogService](_.findLogs(from, size, search))
+    ZIO.serviceWithZIO[Log](_.findLogs(from, size, search))
 
   def countLogs(search: Option[String]) = 
-    ZIO.serviceWithZIO[LogService](_.countLogs(search))
+    ZIO.serviceWithZIO[Log](_.countLogs(search))
 
   def removeIndex(name: String) =
-    ZIO.serviceWithZIO[LogService](_.removeIndex(name))
+    ZIO.serviceWithZIO[Log](_.removeIndex(name))
 
 //  def calls =  ZStream.accessStream(_.get.calls)
 
@@ -41,8 +41,8 @@ object LogService {
 }
 
 case class LogLive(
-    elastic: ElasticService
-) extends LogService {
+    elastic: Elastic
+) extends Log {
 
   def matchAll = must(matchAllQuery())
   def searchText(txt: String) = query(txt)
@@ -69,7 +69,7 @@ case class LogLive(
     //_ <- subscribers.publish("findLogs")
   } yield  searchResult.hits.toList
       .map(_.sourceAsMap)
-      .map(Log.fromMap _)
+      .map(domain.Log.fromMap _)
 
   def countLogs(txt: Option[String]) = elastic.count(searchOption(txt))
   

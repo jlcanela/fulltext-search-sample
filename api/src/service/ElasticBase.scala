@@ -1,4 +1,4 @@
-package elastic
+package service
 
 import zio._
 
@@ -21,12 +21,10 @@ import org.apache.http.auth.UsernamePasswordCredentials
 import org.apache.http.auth.AuthScope
 
 import com.sksamuel.elastic4s.requests.searches.SearchRequest
-//import com.sksamuel.elastic4s.zio.instances._
-
 
 object ElasticConfig {
 
-    def get = Elastic.ElasticConfig(
+    def get = ElasticBase.ElasticConfig(
         elasticHost = "localhost",
         elasticPort = 9200,
         user = "elastic",
@@ -34,33 +32,34 @@ object ElasticConfig {
         ssl = false)
 }
 
-trait Elastic {
+trait ElasticBase {
 
-    def createClient(config: Elastic.ElasticConfig): ZIO[Any, Throwable, JavaClient]
+    def createClient(config: ElasticBase.ElasticConfig): ZIO[Any, Throwable, JavaClient]
     
     def connect: ZIO.Release[Any, Throwable, ElasticClient]
 }
 
-object Elastic {
+object ElasticBase {
     
     case class ElasticConfig(elasticHost: String, elasticPort: Int, user: String, password: String, ssl: Boolean)
     
-    def createClient(config: Elastic.ElasticConfig) = ZIO.serviceWithZIO[Elastic](_.createClient(config))
+    def createClient(config: ElasticBase.ElasticConfig) = ZIO.serviceWithZIO[ElasticBase](_.createClient(config))
 
-    def connect = ZIO.serviceWith[Elastic](_.connect)
+    def connect = ZIO.serviceWith[ElasticBase](_.connect)
 
-    val live = ZLayer.fromFunction(ElasticLive.apply _)
+    val live = ZLayer.fromFunction(ElasticBaseLive.apply _)
 
 }
 
-case class ElasticLive(config: Elastic.ElasticConfig) extends Elastic {
+case class ElasticBaseLive(config: ElasticBase.ElasticConfig) extends ElasticBase {
 
     def connect = ZIO.acquireReleaseWith { for {
             client <- createClient(config)
+            _      <- ZIO.logInfo("Elastic Client Created")
         } yield ElasticClient(client)
     }(client => ZIO.attemptBlockingIO(client.close).ignore)
 
-     def createClient(config: Elastic.ElasticConfig) = ZIO.attempt {
+     def createClient(config: ElasticBase.ElasticConfig) = ZIO.attemptBlockingIO {
         
         lazy val provider = {
             val provider = new BasicCredentialsProvider

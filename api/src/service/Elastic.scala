@@ -1,4 +1,4 @@
-package elastic 
+package service 
 
 import zio._
 
@@ -27,7 +27,7 @@ import com.sksamuel.elastic4s.requests.count.CountResponse
 
 case class SearchResult(count: Long, hits: Array[SearchHit])
 
-trait ElasticService {
+trait Elastic {
 
     def search(req: SearchRequest): ZIO[Any, Throwable, SearchResult]
     def count(req: ESQuery): ZIO[Any, Throwable, Long]
@@ -35,7 +35,7 @@ trait ElasticService {
 
 }
 
-object ElasticService {
+object Elastic {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -47,13 +47,13 @@ object ElasticService {
         def mapError(err: Either[RequestFailure, Throwable]) = err.fold(Failure(_), Error(_))
     }
 
-    def removeIndex(name: String) = ZIO.serviceWithZIO[ElasticService](_.removeIndex(name))
+    def removeIndex(name: String) = ZIO.serviceWithZIO[Elastic](_.removeIndex(name))
   
-    val live = ZLayer.fromFunction(ElasticServiceLive.apply _)
+    val live = ZLayer.fromFunction(ElasticLive.apply _)
 
 }
 
-case class ElasticServiceLive(elastic: Elastic) extends ElasticService {
+case class ElasticLive(elastic: ElasticBase) extends Elastic {
     
     import com.sksamuel.elastic4s.ElasticDsl._
     import com.sksamuel.elastic4s.Indexes
@@ -67,7 +67,7 @@ case class ElasticServiceLive(elastic: Elastic) extends ElasticService {
                 }
             } yield hits
         }
-        .right.mapError(ElasticService.ElasticError.mapError(_))
+        .right.mapError(Elastic.ElasticError.mapError(_))
 
 
     def count(req: ESQuery) = elastic.connect { client =>
@@ -78,7 +78,7 @@ case class ElasticServiceLive(elastic: Elastic) extends ElasticService {
                     case results: RequestSuccess[CountResponse] => ZIO.succeed(Right(results.result.count))  
                 }
         } yield c
-    }.right.mapError(ElasticService.ElasticError.mapError(_))
+    }.right.mapError(Elastic.ElasticError.mapError(_))
 
     def removeIndex(index: String): Task[Boolean] = elastic.connect { client => for {
             _ <- client.execute {

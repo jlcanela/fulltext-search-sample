@@ -6,13 +6,10 @@ import java.io.File
 
 import mill.modules.Assembly
 
-val aa = 1
-
 object Deps {
   val SPARK_VERSION = "3.1.2"
   val ELASTICSEARCH_VERSION = "7.15.0"
-  val ZIO_V1 = "1.0.9"
-  val ZIO_V2 = "2.0.0"
+  val ZIO_V2 = "2.0.2"
 }
 
 object batch extends ScalaModule { outer =>
@@ -96,16 +93,11 @@ object api extends ScalaModule {
     ivy"com.sksamuel.elastic4s::elastic4s-client-esjava:${ELASTICSEARCH_VERSION}",
     ivy"com.google.guava:guava:31.0.1-jre",
     ivy"ch.qos.logback:logback-classic:1.2.6",
-    ivy"com.github.ghostdogpr::caliban:2.0.0",
-    ivy"com.github.ghostdogpr::caliban-zio-http:2.0.0",
-    //ivy"io.d11::zhttp:2.0.0-RC5"
-//    ivy"com.github.ghostdogpr::caliban-http4s:1.2.4",
-//    ivy"org.http4s::http4s-server:0.23.6", 
-//    ivy"org.http4s::http4s-blaze-server:0.23.6", 
+    ivy"com.github.ghostdogpr::caliban:2.0.1",
+    ivy"com.github.ghostdogpr::caliban-zio-http:2.0.1",
   )
 
-  override def mainClass = T { Some("ApiServer") }
-
+  override def mainClass = T { Some("api.ApiServer") }
 
 }
 

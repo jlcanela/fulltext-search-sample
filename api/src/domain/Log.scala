@@ -1,4 +1,4 @@
-package model 
+package domain
 
 case class Log(ip: String, ident: String, user: String, datetime: String, status: String, size: String, referer: String, userAgent: String, unk: String, method: String, uri: String, http: String)
 
