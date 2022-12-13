@@ -9,19 +9,20 @@ trait Process {
   def runBatch(path: String): ZIO[Any, Throwable, (Boolean, Boolean, Boolean)]
 }
 
-object Process extends Accessible[Process] {
-    def runBatch(path: String) = this.apply(_.runBatch(path))
+object Process {
+  def runBatch(path: String): ZIO[Process, Throwable, (Boolean, Boolean, Boolean)] = ZIO.serviceWithZIO[Process](_.runBatch(path))
 
-     val live = (ProcessLive.apply _).toLayer
+  val live: ZLayer[Any, Nothing, Process] = ZLayer.fromFunction(ProcessLive.apply _)
+    
 }
 
-case class ProcessLive(console: Console, clock: Clock) extends Process {
+case class ProcessLive(/*console: Console, clock: Clock*/) extends Process {
     def fetchFile(path: String) = for {
           uri     <- ZIO.succeed(new URI(path))
           file = uri.getPath.split("/").reverse.head
-          _       <- console.printLine(file)
+          _       <- Console.printLine(file)
           exist   <- ZIO.attempt(Files.exists(Paths.get(file))).orDie
-          process <- if (exist) console.printLine(s"$file already exists") else ZIO.attempt(os.proc("curl", "-o", file.toString, "-L", path).spawn().join(1000*30))
+          process <- if (exist) Console.printLine(s"$file already exists") else ZIO.attempt(os.proc("curl", "-o", file.toString, "-L", path).spawn().join(1000*30))
     } yield (file, !exist)
 
     def runSpark(command: String*) = {
@@ -30,8 +31,9 @@ case class ProcessLive(console: Console, clock: Clock) extends Process {
       ZIO.attempt(os.proc(cmd).spawn(cwd=os.pwd).join())
     }
 
-    override def runBatch(path: String): ZIO[Any, Throwable, (Boolean, Boolean, Boolean)] = for {
-      (file, fetched) <- fetchFile(path)
+    override def runBatch(path: String) = for { //: ZIO[Any, Throwable, (Boolean, Boolean, Boolean)] = for {
+      ff <- fetchFile(path)
+      (file, fetched) = ff
       batchSuccess <- runSpark("batch", "access.log.gz", "data/cleaned")
       indexSuccess <- runSpark("index", "data/cleaned")
       reportSuccess <- runSpark("report", "data/cleaned", "data/report")
